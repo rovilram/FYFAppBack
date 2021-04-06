@@ -3,10 +3,10 @@
 const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
-const questionsRouter = require('./routes/questionsRouter');
-const questionRouter = require('./routes/questionRouter');
-const userRouter = require('./routes/userRouter');
-const { authUser } = require('./controllers/userController');
+const courseRouter = require('./srcBackEnd/routes/courseRouter');
+const loginRouter = require('./srcBackEnd/routes/loginRouter');
+const userRouter = require('./srcBackEnd/routes/userRouter');
+const { authUser } = require('./srcBackEnd/controllers/userController');
 
 const server = express();
 
@@ -26,11 +26,16 @@ server.get('/', (req, res) => {
   res.send("Hello World! I'm a API server!!!");
 });
 
-server.use('/questions', questionsRouter);
+// COURSES ENDPOINTS
+//server.use('/courses', authUser);
+server.use('/courses', courseRouter);
 
-server.use('/question', authUser);
-server.use('/question', questionRouter);
+// AUTH ENDPOINTS
+//server.use('/', authUser);
+server.use('/', loginRouter);
 
+// USER ENDPOINTS
+//server.use('/user', authUser);
 server.use('/user', userRouter);
 
 server.listen(HTTP.port, HTTP.host, () => {
