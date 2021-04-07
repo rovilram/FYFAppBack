@@ -1,7 +1,5 @@
 const express = require('express');
-
 const mysql = require('./configs/db');
-
 const app = express();
 
 // Aquí el middleware correspondiente para parsear el body de la request
