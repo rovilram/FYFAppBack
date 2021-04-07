@@ -1,16 +1,16 @@
 const express = require('express');
 const router = express.Router();
-const userController = require('../controllers/loginController');
+const loginController = require('../controllers/loginController');
 
-router.post('/signup').post(loginController.signUp);
+router.post('/signup', loginController.signUp);
 
-router.post('/login').post(loginController.login);
+router.post('/login', loginController.login);
 
-router.get('/logout').get(loginController.logout);
+router.get('/logout', loginController.logout);
 
 router
   .route('/authuser')
-  .get(userController.authUser)
+  .get(loginController.authUser)
   //si pasa la autenticación devolvemos que todo ha ido bien
   .get((req, res) => {
     res.send({
@@ -21,6 +21,6 @@ router
 
 //endpoint para pasar a back el código de solo un uso
 //del OAuth de google
-router.route('/google-oauth').post(userController.googleOAuth);
+router.route('/google-oauth').post(loginController.googleOAuth);
 
 module.exports = router;

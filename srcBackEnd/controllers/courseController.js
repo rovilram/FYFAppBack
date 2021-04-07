@@ -1,5 +1,7 @@
-exports.getCourses = () => {};
+const scrapping = require('./scrapping/scrapping');
 
-exports.getCourse = () => {};
+exports.getCourses = (req, res) => {};
 
-exports.getFav = () => {};
+exports.getCourse = (req, res) => {};
+
+exports.getFav = (req, res) => {};

@@ -70,10 +70,20 @@ exports.signUp = async (req, res) => {
     const newUser = new User({
       user,
       password,
-      secret
+      secret,
     });
     try {
-      const response = await mysqlConnection.query("INSERT INTO usuarios VALUES ?" , [user , req.body.nombre, req.body.appellidos, req.body.email, password, secret]);
+      const response = await mysqlConnection.query(
+        'INSERT INTO usuarios VALUES ?',
+        [
+          user,
+          req.body.nombre,
+          req.body.appellidos,
+          req.body.email,
+          password,
+          secret,
+        ],
+      );
       res.send({
         OK: 1,
         message: 'New user created',
@@ -101,7 +111,10 @@ exports.login = async (req, res) => {
   const password = md5(req.body.password);
 
   if (isValidUserPass(user, password, res)) {
-    const response = await mysqlConnection.query("SELECT * FROM usuarios WHERE id = ? AND password = ?" , [req.body.id , password]);
+    const response = await mysqlConnection.query(
+      'SELECT * FROM usuarios WHERE id = ? AND password = ?',
+      [req.body.id, password],
+    );
 
     if (response) {
       const payload = { user };
@@ -123,7 +136,7 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.signOut = async (req, res) => {
+exports.logout = async (req, res) => {
   /*   const authorization = req.headers.authorization;
 
   const token = authorization.split(' ')[1];
