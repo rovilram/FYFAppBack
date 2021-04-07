@@ -2,11 +2,11 @@ const express = require('express');
 const router = express.Router();
 const userController = require('../controllers/loginController');
 
-router.post('/signup').post(userController.signUp);
+router.post('/signup').post(loginController.signUp);
 
-router.post('/login').post(userController.login);
+router.post('/login').post(loginController.login);
 
-router.get('/logout').get(userController.logout);
+router.get('/logout').get(loginController.logout);
 
 router
   .route('/authuser')

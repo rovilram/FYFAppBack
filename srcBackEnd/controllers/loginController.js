@@ -1,5 +1,5 @@
-// const jwt = require('jsonwebtoken');
-// const md5 = require('md5');
+const jwt = require('jsonwebtoken');
+const md5 = require('md5');
 // require('dotenv').config();
 // const { google } = require('googleapis');
 
@@ -59,9 +59,8 @@ const isValidUserPass = (user, password, res) => {
 };
 
 exports.signUp = async (req, res) => {
-  /* const user = req.body.user;
-  const password = req.body.password;
-  const userType = req.body.userType;
+  const user = req.body.id;
+  const password = md5(req.body.password);
 
   //Validamos los campos user y password
   if (isValidUserPass(user, password, res)) {
@@ -70,12 +69,11 @@ exports.signUp = async (req, res) => {
 
     const newUser = new User({
       user,
-      password: md5(password),
-      secret,
-      userType,
+      password,
+      secret
     });
     try {
-      const response = await newUser.save();
+      const response = await mysqlConnection.query("INSERT INTO usuarios VALUES ?" , [user , req.body.nombre, req.body.appellidos, req.body.email, password, secret]);
       res.send({
         OK: 1,
         message: 'New user created',
@@ -95,23 +93,24 @@ exports.signUp = async (req, res) => {
         message: error.message,
       });
     }
-  } */
+  }
 };
 
 exports.login = async (req, res) => {
-  /*  const user = req.body.user;
-  const password = req.body.password;
+  const user = req.body.user;
+  const password = md5(req.body.password);
 
   if (isValidUserPass(user, password, res)) {
-    const response = await User.findOne({ user, password: md5(password) });
+    const response = await mysqlConnection.query("SELECT * FROM usuarios WHERE id = ? AND password = ?" , [req.body.id , password]);
 
     if (response) {
-      const payload = { user, userType: response.userType };
+      const payload = { user };
       const options = { expiresIn: '10m' };
-      const token = jwt.sign(payload, response.secret, options);
+      console.log(response);
+      //const token = jwt.sign(payload, response.secret, options);
       res.send({
         OK: 1,
-        message: 'Authorized user',
+        message: 'Authorization granted',
         token,
       });
     } else {
@@ -121,7 +120,7 @@ exports.login = async (req, res) => {
         message: 'not a valid user/password pair',
       });
     }
-  } */
+  }
 };
 
 exports.signOut = async (req, res) => {
