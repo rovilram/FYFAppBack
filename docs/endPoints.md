@@ -27,5 +27,3 @@ Los endpoint marcados con (TOKEN AUTH) requieren que sea enviado un token JWT po
 **/user** _GET_ (TOKEN AUTH) Devuelve los datos de perfil del usuario.
 
 **/user** _PATCH_ (TOKEN AUTH) Modifica alguno de los datos de perfil del usuario.
-
-**/user** DELETE (TOKEN AUTH) Borra la cuenta del usuario ???? **Ver si es necesario hacerlo...**
