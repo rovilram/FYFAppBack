@@ -5,24 +5,28 @@ const EIT_URL = 'https://escuela.it/api/course/get-all';
 
 async function scrapDetalle(href) {
   //recogemos la info con axios
-  // return datacourse=
-  let response = await axios.get(href).then((response) => {
-    let dataCourse;
-    //transformamos los datos con transform:body
-    //para poder leer el html
-    transform: (body) => cheerio.load(response.data);
-    let $ = cheerio.load(response.data);
-    let price = $('.Course-price-promo').text();
-    let rating = $('.Course-interaction-ratings');
-    let currentRating = rating.children('eit-rating').attr('currentrating');
-    let author = $('.Person-name').text();
-    dataCourse = {
-      price: price,
-      currentRating: currentRating,
-      author: author,
-    };
-    return dataCourse;
-  });
+  let response = await axios
+    .get(href)
+    .then((response) => {
+      let dataCourse;
+      //transformamos los datos con transform:body
+      //para poder leer el html
+      transform: (body) => cheerio.load(response.data);
+      let $ = cheerio.load(response.data);
+      let price = $('.Course-price-promo').text();
+      let rating = $('.Course-interaction-ratings');
+      let currentRating = rating.children('eit-rating').attr('currentrating');
+      let author = $('.Person-name').text();
+      dataCourse = {
+        price: price,
+        currentRating: currentRating,
+        author: author,
+      };
+      return dataCourse;
+    })
+    .catch((error) => {
+      throw error;
+    });
   return await response;
 }
 
@@ -56,6 +60,9 @@ async function eitScrapping(url) {
         });
         return newCourses;
       }
+    })
+    .catch((error) => {
+      throw error;
     });
   return await result;
 }
@@ -84,13 +91,18 @@ async function eitAddFields(courses) {
 
 async function scrappingCourses(filter) {
   return await eitScrapping(EIT_URL)
-    .catch((err) => console.log(err))
     .then((courses) => eitCoursesFilter(courses, filter))
     .then((courses) => eitAddFields(courses))
     .then((data) => {
       //TODO: añadir aquí la función del otro proveedor de cursos, homogeneizar y unir los dos arrays
       return data;
+    })
+    .catch((err) => {
+      console.log('ERROR:');
+      throw err;
     });
 }
 
-//scrappingCourses('node').then((data) => console.log(data));
+//scrappingCourses('deno').then((data) => console.log(data));
+
+exports.scrappingCourses = scrappingCourses;
