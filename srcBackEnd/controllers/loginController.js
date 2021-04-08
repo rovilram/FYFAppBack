@@ -123,7 +123,7 @@ exports.login = async (req, res) => {
   }
 };
 
-exports.signOut = async (req, res) => {
+exports.logout = async (req, res) => {
   /*   const authorization = req.headers.authorization;
 
   const token = authorization.split(' ')[1];
