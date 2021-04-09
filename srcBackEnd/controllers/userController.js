@@ -17,10 +17,9 @@ exports.getUser =async () => {
         });
     }
    
-    const results = await doQuery(sql);
-    
-      const doStuffWithResults = (resultados) => {
-        console.log(resultados[0].nombre);
+const results = await doQuery(sql);
+const doStuffWithResults = (resultados) => {
+console.log(resultados[0].nombre);
 
         // Aquí haces cosas con los resultados
     }
