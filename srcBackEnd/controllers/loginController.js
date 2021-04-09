@@ -2,6 +2,7 @@ const jwt = require('jsonwebtoken');
 const md5 = require('md5');
 const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
+const dbConnection = require('../database/db');
 
 // require('dotenv').config();
 
@@ -61,31 +62,58 @@ const isValidUserPass = (user, password, res) => {
 };
 
 exports.signUp = async (req, res) => {
-  const user = req.body.id;
-  const password = md5(req.body.password);
+  const email = req.body.email;
+  const pass = md5(req.body.pass);
 
   //Validamos los campos user y password
-  if (isValidUserPass(user, password, res)) {
+  if (isValidUserPass(email, pass, res)) {
     //generamos una clave secreta para el JWT del usuario
     const secret = nanoid();
 
-    const newUser = new User({
-      user,
-      password,
-      secret,
-    });
-    try {
-      const response = await mysqlConnection.query(
-        'INSERT INTO usuarios VALUES ?',
-        [
-          user,
-          req.body.nombre,
-          req.body.appellidos,
-          req.body.email,
-          password,
-          secret,
-        ],
+  try {
+      const response = await dbConnection.query(
+        'SELECT email FROM acceso_Nativo WHERE email = ?', [email]
       );
+      res.status(409).send({
+        OK: 0,
+        status: 409,
+        message: "El usuario ya está registrado"
+      })
+    }
+      catch (error) {
+        // si ha habido error es que la base de datos no tenía el usuario.
+        // podemos seguir el registro.
+        console.log("sigue registro");
+      }
+
+
+
+
+
+
+    // const newUser = new User({
+    //   user: email,
+    //   password: pass,
+    //   secret,
+    // });
+/*     try {
+      const response = await dbConnection.query(
+        'INSERT INTO usuario VALUES ?',
+        [secret],
+      ); }
+      catch (error) {
+        res.
+      } */
+
+
+
+      // email,
+      //   pass,
+      //   req.body.nombre,
+      //   req.body.appellidos,
+      //   req.body.email,
+
+
       res.send({
         OK: 1,
         message: 'New user created',
@@ -113,7 +141,7 @@ exports.login = async (req, res) => {
   const password = md5(req.body.password);
 
   if (isValidUserPass(user, password, res)) {
-    const response = await mysqlConnection.query(
+    const response = await dbConnection.query(
       'SELECT * FROM usuarios WHERE id = ? AND password = ?',
       [req.body.id, password],
     );
