@@ -318,8 +318,8 @@ exports.googleOAuth = async (req, res) => {
 };
 
 const oauth2Client = new google.auth.OAuth2({
-  clientId:
-    '1067750231965-bd6i47vmn8cpp2fjbt0mnbd3ht7dem14.apps.googleusercontent.com',
+  clientId: (process.env.GOOGLE_AUTH_CLIENT_ID =
+    '1067750231965-bd6i47vmn8cpp2fjbt0mnbd3ht7dem14.apps.googleusercontent.com'),
   clientSecret: 'IcOL-Z1LMCWF1mgrqiGjYQG4',
   redirectUri: 'http://localhost:8080/google-oauth',
 });
