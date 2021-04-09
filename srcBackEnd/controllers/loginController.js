@@ -84,6 +84,8 @@ exports.signUp = async (req, res) => {
         // si ha habido error es que la base de datos no tenía el usuario.
         // podemos seguir el registro.
         console.log("sigue registro");
+
+
       }
 
 
@@ -114,26 +116,26 @@ exports.signUp = async (req, res) => {
       //   req.body.email,
 
 
-      res.send({
-        OK: 1,
-        message: 'New user created',
-        newUser: response.user,
-      });
-    } catch (error) {
-      if (error.code === 11000) {
-        res.status(409).send({
-          OK: 0,
-          error: 409,
-          message: error.message,
-        });
-      }
-      res.status(500).send({
-        OK: 0,
-        error: 500,
-        message: error.message,
-      });
-    }
-  }
+  //     res.send({
+  //       OK: 1,
+  //       message: 'New user created',
+  //       newUser: response.user,
+  //     });
+  //   } catch (error) {
+  //     if (error.code === 11000) {
+  //       res.status(409).send({
+  //         OK: 0,
+  //         error: 409,
+  //         message: error.message,
+  //       });
+  //     }
+  //     res.status(500).send({
+  //       OK: 0,
+  //       error: 500,
+  //       message: error.message,
+  //     });
+  //   }
+  // }
 };
 
 exports.login = async (req, res) => {
