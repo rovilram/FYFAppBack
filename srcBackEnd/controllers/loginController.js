@@ -2,8 +2,20 @@ const jwt = require('jsonwebtoken');
 const md5 = require('md5');
 const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
+const dbConnection = require('../database/db');
 
 // require('dotenv').config();
+
+const doQuery = (query) => {
+  return new Promise((resolve, reject) => {
+    dbConnection.query(query, (error, results) => {
+      if (error) return reject(error);
+      return resolve(results);
+    });
+  });
+};
+
+//-------------------------------------------------
 
 const isValidUser = (user) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user);
@@ -16,12 +28,13 @@ const isValidPassword = (password) => {
   const validMay = /[A-Z]+/.test(password);
   const validNum = /[0-9]+/.test(password);
   const validSpecial = /[@#$%&]+/.test(password);
+
   if (!validLong)
     return { OK: false, message: 'password must be at least 8 characters' };
   else if (!validMin)
     return {
       OK: false,
-      message: 'password must be at least 1 lowecase character',
+      message: 'password must be at least 1 lowercase character',
     };
   else if (!validMay)
     return {
@@ -61,48 +74,45 @@ const isValidUserPass = (user, password, res) => {
 };
 
 exports.signUp = async (req, res) => {
-  const user = req.body.id;
-  const password = md5(req.body.password);
+  const email = req.body.email;
+  let pass = req.body.pass;
 
   //Validamos los campos user y password
-  if (isValidUserPass(user, password, res)) {
+  if (isValidUserPass(email, pass, res)) {
     //generamos una clave secreta para el JWT del usuario
-    const secret = nanoid();
-
-    const newUser = new User({
-      user,
-      password,
-      secret,
-    });
+    const secret = nanoid(10);
+    pass = md5(pass);
     try {
-      const response = await mysqlConnection.query(
-        'INSERT INTO usuarios VALUES ?',
-        [
-          user,
-          req.body.nombre,
-          req.body.appellidos,
-          req.body.email,
-          password,
-          secret,
-        ],
-      );
-      res.send({
-        OK: 1,
-        message: 'New user created',
-        newUser: response.user,
-      });
-    } catch (error) {
-      if (error.code === 11000) {
+      let sql = `SELECT email FROM acceso_Nativo WHERE email = "${email}"`;
+
+      let response = await doQuery(sql);
+
+      if (response.length !== 0) {
         res.status(409).send({
           OK: 0,
-          error: 409,
-          message: error.message,
+          status: 409,
+          message: 'El usuario ya está registrado',
+        });
+      } else {
+        sql = `INSERT INTO usuario (secreto) VALUES ("${secret}")`;
+        response = await doQuery(sql);
+
+        sql = `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${response.insertId}, 0)`;
+        response = await doQuery(sql);
+
+        sql = `INSERT INTO acceso_Nativo (email, pass, idAcceso) VALUES ("${email}", "${pass}", ${response.insertId})`;
+        response = await doQuery(sql);
+
+        res.send({
+          OK: 1,
+          message: 'Usuario creado',
+          usuario: response.insertId,
         });
       }
+    } catch (error) {
       res.status(500).send({
         OK: 0,
-        error: 500,
-        message: error.message,
+        message: `ERROR en base de datos: ${error}`,
       });
     }
   }
@@ -113,7 +123,7 @@ exports.login = async (req, res) => {
   const password = md5(req.body.password);
 
   if (isValidUserPass(user, password, res)) {
-    const response = await mysqlConnection.query(
+    const response = await dbConnection.query(
       'SELECT * FROM usuarios WHERE id = ? AND password = ?',
       [req.body.id, password],
     );
