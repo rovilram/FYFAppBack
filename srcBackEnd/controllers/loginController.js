@@ -6,6 +6,23 @@ const dbConnection = require('../database/db');
 
 // require('dotenv').config();
 
+
+
+    const doQuery = (query) => {
+      return new Promise((resolve, reject) => {
+        dbConnection.query(query, (error, results) => {
+          if (error) return reject(error);
+          console.log('Consulta correcta');
+          return resolve(results);
+        });
+      });
+    };
+
+    
+
+
+//-------------------------------------------------
+
 const isValidUser = (user) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user);
 };
@@ -17,12 +34,13 @@ const isValidPassword = (password) => {
   const validMay = /[A-Z]+/.test(password);
   const validNum = /[0-9]+/.test(password);
   const validSpecial = /[@#$%&]+/.test(password);
+  
   if (!validLong)
     return { OK: false, message: 'password must be at least 8 characters' };
   else if (!validMin)
     return {
       OK: false,
-      message: 'password must be at least 1 lowecase character',
+      message: 'password must be at least 1 lowercase character',
     };
   else if (!validMay)
     return {
@@ -63,27 +81,46 @@ const isValidUserPass = (user, password, res) => {
 
 exports.signUp = async (req, res) => {
   const email = req.body.email;
-  const pass = md5(req.body.pass);
+  let pass = req.body.pass;
+  
 
   //Validamos los campos user y password
   if (isValidUserPass(email, pass, res)) {
     //generamos una clave secreta para el JWT del usuario
-    const secret = nanoid();
-
+    const secret = nanoid(10);
+    pass = md5(pass);
     try {
-      const response = await dbConnection.query(
-        'SELECT email FROM acceso_Nativo WHERE email = ?',
-        [email],
-      );
-      res.status(409).send({
-        OK: 0,
-        status: 409,
-        message: 'El usuario ya está registrado',
-      });
+
+      let sql =
+          `SELECT email FROM acceso_Nativo WHERE email = "${email}"`;
+
+      let response = await doQuery(sql);
+
+      if (response.length !== 0){
+          res.status(409).send({
+            OK: 0,
+            status: 409,
+            message: 'El usuario ya está registrado',
+          });
+      }
+      else{
+        sql =
+          `INSERT INTO usuario (secreto) VALUES ("${secret}")`;
+          response = await doQuery(sql);
+        
+          sql =
+          `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${response.insertId}, 0)`;
+          response = await doQuery(sql);
+
+           sql =
+           `INSERT INTO acceso_Nativo (email, pass, idAcceso) VALUES ("${email}", "${pass}", ${response.insertId})`;
+           response = await doQuery(sql);
+           console.log(response);
+      }
     } catch (error) {
       // si ha habido error es que la base de datos no tenía el usuario.
       // podemos seguir el registro.
-      console.log('sigue registro');
+      console.log('sigue registro', error);
     }
 
     // const newUser = new User({
@@ -128,6 +165,8 @@ exports.signUp = async (req, res) => {
     // }
   }
 };
+
+
 
 exports.login = async (req, res) => {
   const user = req.body.user;

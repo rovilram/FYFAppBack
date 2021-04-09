@@ -46,7 +46,7 @@ exports.getUser = async (req, res) => {
 exports.updateUser = async (req, res) => {
   // **/user** _PATCH_ (TOKEN AUTH) Modifica alguno de los datos de perfil del usuario.
 
-  const user = req.body.id;
+  const email = req.body.email;
   const nombre = req.body.nombre;
   const apellidos = req.body.apellidos;
   const foto = req.body.foto;
