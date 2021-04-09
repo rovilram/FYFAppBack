@@ -11,7 +11,7 @@ exports.getUser =async () => {
     //aqui metemos el id del usuario que queremos
    let usuarioBack=1;
   
-    let sql =('SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario ='+`${usuarioBack}`)
+    let sql =('SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario = '+`${usuarioBack}`)
     
     const doQuery = (query) =>{
         return new Promise((resolve, reject) => {

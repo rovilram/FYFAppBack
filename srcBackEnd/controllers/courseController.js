@@ -21,4 +21,7 @@ exports.getCourses = (req, res) => {
 
 exports.getCourse = (req, res) => {};
 
-exports.getFav = (req, res) => {};
+exports.getFav = (req, res) => {
+ 
+
+};
