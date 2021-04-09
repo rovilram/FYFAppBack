@@ -1,8 +1,9 @@
 const jwt = require('jsonwebtoken');
 const md5 = require('md5');
 const { nanoid } = require('nanoid');
+const { google } = require('googleapis');
+
 // require('dotenv').config();
-// const { google } = require('googleapis');
 
 const isValidUser = (user) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user);
@@ -314,4 +315,40 @@ exports.googleOAuth = async (req, res) => {
       message: error.message,
     });
   } */
+};
+
+const oauth2Client = new google.auth.OAuth2({
+  clientId:
+    '1067750231965-bd6i47vmn8cpp2fjbt0mnbd3ht7dem14.apps.googleusercontent.com',
+  clientSecret: 'IcOL-Z1LMCWF1mgrqiGjYQG4',
+  redirectUri: 'http://localhost:8080/google-oauth',
+});
+function getGoogleAuthURL() {
+  /*
+   * Generate a url that asks permissions to the user's email and profile
+   */
+
+  const scopes = [
+    'https://www.googleapis.com/auth/userinfo.profile',
+    'https://www.googleapis.com/auth/userinfo.email',
+  ];
+
+  return oauth2Client.generateAuthUrl({
+    access_type: 'offline',
+    prompt: 'consent',
+    scope: scopes, // If you only need one scope you can pass it as string
+  });
+}
+
+exports.googleLink = (req, res) => {
+  try {
+    const respuesta = getGoogleAuthURL();
+    res.status(200).send({
+      OK: 1,
+      message: 'google link creado',
+      link: respuesta,
+    });
+  } catch (error) {
+    console.log(error);
+  }
 };

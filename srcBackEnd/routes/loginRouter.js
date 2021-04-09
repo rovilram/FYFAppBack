@@ -23,4 +23,5 @@ router
 //del OAuth de google
 router.route('/google-oauth').post(loginController.googleOAuth);
 
+router.get('/google-link', loginController.googleLink);
 module.exports = router;

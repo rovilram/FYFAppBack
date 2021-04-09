@@ -6,19 +6,19 @@ Los endpoint marcados con (TOKEN AUTH) requieren que sea enviado un token JWT po
 
 **OK** **courses?search=""** _GET_ (TOKEN AUTH) Devuelve los cursos con una determinada búsqueda.
 
-**courses/:id** _GET_ (TOKEN AUTH) Devuelve el curso con un determinado id.
-
 **courses/fav** _GET_ (TOKEN AUTH) Devuelve los cursos favoritos del usuario.
 
 ## AUTH
 
-**/login** _POST_ Logea con email y contraseña.
+**FALTA SQL** **/login** _POST_ Logea con email y contraseña.
 
-**/signup** _POST_ Registra usuario con email y contraseña (y se añaden otros datos de usuario).
+**FALTA SQL ** **/signup** _POST_ Registra usuario con email y contraseña (y se añaden otros datos de usuario).
 
 **/logout** _GET_ (TOKEN AUTH) Desconecta al usuario.
 
 **FALTA SQL** **/authuser** _GET_ (TOKEN AUTH) Confirma si el token del usuario es válido. **Por si es necesario para front**
+
+**OK** **/google-link** _GET_ front no envía nada, back envía un link para el botón de google
 
 **/google-oauth** _POST_ envía el código de un solo uso de google OAuth para verificar identidad.
 
