@@ -6,20 +6,15 @@ const dbConnection = require('../database/db');
 
 // require('dotenv').config();
 
-
-
-    const doQuery = (query) => {
-      return new Promise((resolve, reject) => {
-        dbConnection.query(query, (error, results) => {
-          if (error) return reject(error);
-          console.log('Consulta correcta');
-          return resolve(results);
-        });
-      });
-    };
-
-    
-
+const doQuery = (query) => {
+  return new Promise((resolve, reject) => {
+    dbConnection.query(query, (error, results) => {
+      if (error) return reject(error);
+      console.log('Consulta correcta');
+      return resolve(results);
+    });
+  });
+};
 
 //-------------------------------------------------
 
@@ -34,7 +29,7 @@ const isValidPassword = (password) => {
   const validMay = /[A-Z]+/.test(password);
   const validNum = /[0-9]+/.test(password);
   const validSpecial = /[@#$%&]+/.test(password);
-  
+
   if (!validLong)
     return { OK: false, message: 'password must be at least 8 characters' };
   else if (!validMin)
@@ -82,7 +77,6 @@ const isValidUserPass = (user, password, res) => {
 exports.signUp = async (req, res) => {
   const email = req.body.email;
   let pass = req.body.pass;
-  
 
   //Validamos los campos user y password
   if (isValidUserPass(email, pass, res)) {
@@ -90,83 +84,40 @@ exports.signUp = async (req, res) => {
     const secret = nanoid(10);
     pass = md5(pass);
     try {
-
-      let sql =
-          `SELECT email FROM acceso_Nativo WHERE email = "${email}"`;
+      let sql = `SELECT email FROM acceso_Nativo WHERE email = "${email}"`;
 
       let response = await doQuery(sql);
 
-      if (response.length !== 0){
-          res.status(409).send({
-            OK: 0,
-            status: 409,
-            message: 'El usuario ya está registrado',
-          });
-      }
-      else{
-        sql =
-          `INSERT INTO usuario (secreto) VALUES ("${secret}")`;
-          response = await doQuery(sql);
-        
-          sql =
-          `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${response.insertId}, 0)`;
-          response = await doQuery(sql);
+      if (response.length !== 0) {
+        res.status(409).send({
+          OK: 0,
+          status: 409,
+          message: 'El usuario ya está registrado',
+        });
+      } else {
+        sql = `INSERT INTO usuario (secreto) VALUES ("${secret}")`;
+        response = await doQuery(sql);
 
-           sql =
-           `INSERT INTO acceso_Nativo (email, pass, idAcceso) VALUES ("${email}", "${pass}", ${response.insertId})`;
-           response = await doQuery(sql);
-           console.log(response);
+        sql = `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${response.insertId}, 0)`;
+        response = await doQuery(sql);
+
+        sql = `INSERT INTO acceso_Nativo (email, pass, idAcceso) VALUES ("${email}", "${pass}", ${response.insertId})`;
+        response = await doQuery(sql);
+
+        res.send({
+          OK: 1,
+          message: 'Usuario creado',
+          usuario: response.insertId,
+        });
       }
     } catch (error) {
-      // si ha habido error es que la base de datos no tenía el usuario.
-      // podemos seguir el registro.
-      console.log('sigue registro', error);
+      res.status(500).send({
+        OK: 0,
+        message: `ERROR en base de datos: ${error}`,
+      });
     }
-
-    // const newUser = new User({
-    //   user: email,
-    //   password: pass,
-    //   secret,
-    // });
-    /*     try {
-      const response = await dbConnection.query(
-        'INSERT INTO usuario VALUES ?',
-        [secret],
-      ); }
-      catch (error) {
-        res.
-      } */
-
-    // email,
-    //   pass,
-    //   req.body.nombre,
-    //   req.body.appellidos,
-    //   req.body.email,
-
-    //     res.send({
-    //       OK: 1,
-    //       message: 'New user created',
-    //       newUser: response.user,
-    //     });
-    //   } catch (error) {
-    //     if (error.code === 11000) {
-    //       res.status(409).send({
-    //         OK: 0,
-    //         error: 409,
-    //         message: error.message,
-    //       });
-    //     }
-    //     res.status(500).send({
-    //       OK: 0,
-    //       error: 500,
-    //       message: error.message,
-    //     });
-    //   }
-    // }
   }
 };
-
-
 
 exports.login = async (req, res) => {
   const user = req.body.user;

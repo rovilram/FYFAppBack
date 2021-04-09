@@ -14,7 +14,7 @@ foreign key(idUsuario) references usuario(id)
 CREATE TABLE acceso_Nativo (
 id INT PRIMARY KEY AUTO_INCREMENT,
 email varchar(100) NOT NULL,
-pass varchar(10) NOT NULL,
+pass varchar(100) NOT NULL,
 idAcceso int not null,
 foreign key(idAcceso) references accesos(id)
 );
