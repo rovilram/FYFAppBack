@@ -70,35 +70,28 @@ exports.signUp = async (req, res) => {
     //generamos una clave secreta para el JWT del usuario
     const secret = nanoid();
 
-  try {
+    try {
       const response = await dbConnection.query(
-        'SELECT email FROM acceso_Nativo WHERE email = ?', [email]
+        'SELECT email FROM acceso_Nativo WHERE email = ?',
+        [email],
       );
       res.status(409).send({
         OK: 0,
         status: 409,
-        message: "El usuario ya está registrado"
-      })
+        message: 'El usuario ya está registrado',
+      });
+    } catch (error) {
+      // si ha habido error es que la base de datos no tenía el usuario.
+      // podemos seguir el registro.
+      console.log('sigue registro');
     }
-      catch (error) {
-        // si ha habido error es que la base de datos no tenía el usuario.
-        // podemos seguir el registro.
-        console.log("sigue registro");
-
-
-      }
-
-
-
-
-
 
     // const newUser = new User({
     //   user: email,
     //   password: pass,
     //   secret,
     // });
-/*     try {
+    /*     try {
       const response = await dbConnection.query(
         'INSERT INTO usuario VALUES ?',
         [secret],
@@ -107,35 +100,33 @@ exports.signUp = async (req, res) => {
         res.
       } */
 
+    // email,
+    //   pass,
+    //   req.body.nombre,
+    //   req.body.appellidos,
+    //   req.body.email,
 
-
-      // email,
-      //   pass,
-      //   req.body.nombre,
-      //   req.body.appellidos,
-      //   req.body.email,
-
-
-  //     res.send({
-  //       OK: 1,
-  //       message: 'New user created',
-  //       newUser: response.user,
-  //     });
-  //   } catch (error) {
-  //     if (error.code === 11000) {
-  //       res.status(409).send({
-  //         OK: 0,
-  //         error: 409,
-  //         message: error.message,
-  //       });
-  //     }
-  //     res.status(500).send({
-  //       OK: 0,
-  //       error: 500,
-  //       message: error.message,
-  //     });
-  //   }
-  // }
+    //     res.send({
+    //       OK: 1,
+    //       message: 'New user created',
+    //       newUser: response.user,
+    //     });
+    //   } catch (error) {
+    //     if (error.code === 11000) {
+    //       res.status(409).send({
+    //         OK: 0,
+    //         error: 409,
+    //         message: error.message,
+    //       });
+    //     }
+    //     res.status(500).send({
+    //       OK: 0,
+    //       error: 500,
+    //       message: error.message,
+    //     });
+    //   }
+    // }
+  }
 };
 
 exports.login = async (req, res) => {
