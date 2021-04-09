@@ -1,5 +1,6 @@
 const jwt = require('jsonwebtoken');
 const md5 = require('md5');
+const { nanoid } = require('nanoid');
 // require('dotenv').config();
 // const { google } = require('googleapis');
 
@@ -137,13 +138,15 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-  /*   const authorization = req.headers.authorization;
+  const authorization = req.headers.authorization;
 
   const token = authorization.split(' ')[1];
 
   const user = jwt.decode(token).user;
 
-  const response = await User.findOne({ user });
+  //TODO: Meter SQL
+  //const response = await User.findOne({ user });
+  const response = null;
 
   if (response) {
     const secret = response.secret;
@@ -152,7 +155,8 @@ exports.logout = async (req, res) => {
       jwt.verify(token, secret);
       try {
         const newSecret = nanoid();
-        await User.updateOne({ user }, { secret: newSecret });
+        //TODO Meter SQL
+        //await User.updateOne({ user }, { secret: newSecret });
         res.send({
           OK: 1,
           message: 'User Disconnected',
@@ -171,58 +175,59 @@ exports.logout = async (req, res) => {
         message: error.message,
       });
     }
-  } */
+  }
 };
 
-const auth = async (authorization) => {
-  /*   if (authorization) {
+exports.authUser = async (req, res, next) => {
+  const authorization = req.headers.authorization;
+  if (authorization) {
     const token = authorization.split(' ')[1];
 
     const payload = jwt.decode(token);
 
     if (!payload) {
-      return { OK: 0, status: 401, message: 'Invalid token' };
-    }
-    const user = payload.user;
-
-    const response = await User.findOne({ user });
-
-    if (response) {
-      const secret = response.secret;
-      req.name = response.name;
-      req.picture = response.picture;
-      //pasamos datos de usuario en la request por si nos pueden ser útiles.
-
-      try {
-        jwt.verify(token, secret);
-        //TODO: si algun dia necesito autenticacion de estudiante o admin
-        //habrá que hacerlo desde aquí
-        return { OK: 1, status: 200, message: 'autorized User' };
-      } catch (error) {
-        return { OK: 0, status: 401, message: error.message };
-      }
+      res.status(401).send({
+        OK: 0,
+        status: 401,
+        message: 'Invalid token',
+      });
     } else {
-      return { OK: 0, status: 401, message: 'User unknown / invalid Token' };
+      const user = payload.user;
+
+      //TODO: Cambiar a SQL
+      //const response = await User.findOne({ user });
+      let response = null;
+
+      if (response) {
+        const secret = response.secret;
+        req.name = response.name;
+        req.picture = response.picture;
+
+        try {
+          jwt.verify(token, secret);
+          next();
+        } catch (error) {
+          res.status(401).send({
+            OK: 0,
+            error: 401,
+            message: error.message,
+          });
+        }
+      } else {
+        res.status(401).send({
+          OK: 0,
+          error: 401,
+          message: 'User unknown / invalid Token',
+        });
+      }
     }
   } else {
-    return { OK: 0, status: 401, message: 'Token required' };
-  } */
-};
-
-//middleware!!!
-exports.authUser = async (req, res, next) => {
-  /*   const authorization = req.headers.authorization;
-  const response = auth(authorization);
-  if (response.OK === 1) {
-    res.status(response.status).send({
-      OK: response.OK,
-      status: response.status,
-      message: response.message,
+    res.status(401).send({
+      OK: 0,
+      error: 401,
+      message: 'Token required',
     });
   }
-  // TODO !!!!: ME HE QUEDADO AQUI EN REFACTOR
-  // meter aquí llamada a funcion auth(authorization)
-  // if return trae 1 hacer next, sino sacar el error por res */
 };
 
 exports.googleOAuth = async (req, res) => {
