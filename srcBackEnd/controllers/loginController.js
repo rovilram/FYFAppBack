@@ -10,7 +10,6 @@ const doQuery = (query) => {
   return new Promise((resolve, reject) => {
     dbConnection.query(query, (error, results) => {
       if (error) return reject(error);
-      console.log('Consulta correcta');
       return resolve(results);
     });
   });
