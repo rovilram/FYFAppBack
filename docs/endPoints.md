@@ -20,7 +20,7 @@ Los endpoint marcados con (TOKEN AUTH) requieren que sea enviado un token JWT po
 
 **OK** **/google-link** _GET_ front no envía nada, back envía un link para el botón de google
 
-**/google-oauth** _POST_ envía el código de un solo uso de google OAuth para verificar identidad.
+**/google-oauth** _GET_ envía el código de un solo uso de google OAuth para verificar identidad.
 
 ## USERS
 

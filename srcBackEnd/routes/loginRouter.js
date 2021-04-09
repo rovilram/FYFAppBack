@@ -21,7 +21,7 @@ router
 
 //endpoint para pasar a back el código de solo un uso
 //del OAuth de google
-router.route('/google-oauth').post(loginController.googleOAuth);
+router.route('/google-oauth').get(loginController.googleOAuth);
 
 router.get('/google-link', loginController.googleLink);
 module.exports = router;

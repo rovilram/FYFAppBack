@@ -232,7 +232,7 @@ exports.authUser = async (req, res, next) => {
 };
 
 exports.googleOAuth = async (req, res) => {
-  /*   const code = req.body.code;
+  const code = req.query.code;
 
   const GOOGLE_SECRET = process.env.GOOGLE_AUTH_SECRET;
   const GOOGLE_CLIENT_ID = process.env.GOOGLE_AUTH_CLIENT_ID;
@@ -240,9 +240,9 @@ exports.googleOAuth = async (req, res) => {
   console.log(GOOGLE_SECRET);
 
   const oauth2Client = new google.auth.OAuth2({
-    clientId: GOOGLE_CLIENT_ID,
-    clientSecret: GOOGLE_SECRET,
-    redirectUri: 'postmessage',
+    clientId: process.env.GOOGLE_AUTH_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_AUTH_SECRET,
+    redirectUri: process.env.GOOGLE_AUTH_REDIRECT_URI,
   });
 
   const { tokens } = await oauth2Client.getToken(code);
@@ -273,7 +273,8 @@ exports.googleOAuth = async (req, res) => {
     if (user && verifiedUser) {
       //tenemos el usuario hay que buscarlo en nuestra base de datos
       try {
-        const result = await User.findOneAndUpdate({ user }, { name, picture });
+        //const result = await User.findOneAndUpdate({ user }, { name, picture });
+        const result = { secret: 'hola' };
         console.log('RESULT', result);
         if (result) {
           console.log('USUARIO REGISTRADO');
@@ -281,12 +282,13 @@ exports.googleOAuth = async (req, res) => {
           const options = { expiresIn: '10m' };
           const token = jwt.sign(payload, result.secret, options);
           console.log('NEWTOKEN', token);
-          res.send({
+          res.redirect('http://google.es');
+          /* res.send({
             OK: 1,
             status: 200,
             message: 'Authorized user',
             token,
-          });
+          }); */
         } else {
           //el usuario no está en la base de datos
           throw {
@@ -314,20 +316,18 @@ exports.googleOAuth = async (req, res) => {
       status: error.status,
       message: error.message,
     });
-  } */
+  }
 };
 
-const oauth2Client = new google.auth.OAuth2({
-  clientId:
-    '1067750231965-bd6i47vmn8cpp2fjbt0mnbd3ht7dem14.apps.googleusercontent.com',
-  clientSecret: 'IcOL-Z1LMCWF1mgrqiGjYQG4',
-  redirectUri: 'http://localhost:8080/google-oauth',
-});
 function getGoogleAuthURL() {
   /*
    * Generate a url that asks permissions to the user's email and profile
    */
-
+  const oauth2Client = new google.auth.OAuth2({
+    clientId: process.env.GOOGLE_AUTH_CLIENT_ID,
+    clientSecret: process.env.GOOGLE_AUTH_SECRET,
+    redirectUri: process.env.GOOGLE_AUTH_REDIRECT_URI,
+  });
   const scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email',
