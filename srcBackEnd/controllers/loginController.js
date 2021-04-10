@@ -2,8 +2,20 @@ const jwt = require('jsonwebtoken');
 const md5 = require('md5');
 const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
+const dbConnection = require('../database/db');
 
 // require('dotenv').config();
+
+const doQuery = (query) => {
+  return new Promise((resolve, reject) => {
+    dbConnection.query(query, (error, results) => {
+      if (error) return reject(error);
+      return resolve(results);
+    });
+  });
+};
+
+//-------------------------------------------------
 
 const isValidUser = (user) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user);
@@ -16,12 +28,13 @@ const isValidPassword = (password) => {
   const validMay = /[A-Z]+/.test(password);
   const validNum = /[0-9]+/.test(password);
   const validSpecial = /[@#$%&]+/.test(password);
+
   if (!validLong)
     return { OK: false, message: 'password must be at least 8 characters' };
   else if (!validMin)
     return {
       OK: false,
-      message: 'password must be at least 1 lowecase character',
+      message: 'password must be at least 1 lowercase character',
     };
   else if (!validMay)
     return {
@@ -61,80 +74,79 @@ const isValidUserPass = (user, password, res) => {
 };
 
 exports.signUp = async (req, res) => {
-  const user = req.body.id;
-  const password = md5(req.body.password);
+  const email = req.body.email;
+  let pass = req.body.pass;
 
   //Validamos los campos user y password
-  if (isValidUserPass(user, password, res)) {
+  if (isValidUserPass(email, pass, res)) {
     //generamos una clave secreta para el JWT del usuario
-    const secret = nanoid();
-
-    const newUser = new User({
-      user,
-      password,
-      secret,
-    });
+    const secret = nanoid(10);
+    pass = md5(pass);
     try {
-      const response = await mysqlConnection.query(
-        'INSERT INTO usuarios VALUES ?',
-        [
-          user,
-          req.body.nombre,
-          req.body.appellidos,
-          req.body.email,
-          password,
-          secret,
-        ],
-      );
-      res.send({
-        OK: 1,
-        message: 'New user created',
-        newUser: response.user,
-      });
-    } catch (error) {
-      if (error.code === 11000) {
+      let sql = `SELECT email FROM acceso_Nativo WHERE email = "${email}"`;
+
+      let response = await doQuery(sql);
+
+      if (response.length !== 0) {
         res.status(409).send({
           OK: 0,
-          error: 409,
-          message: error.message,
+          status: 409,
+          message: 'El usuario ya está registrado',
+        });
+      } else {
+        sql = `INSERT INTO usuario (secreto) VALUES ("${secret}")`;
+        response = await doQuery(sql);
+
+        sql = `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${response.insertId}, 0)`;
+        response = await doQuery(sql);
+
+        sql = `INSERT INTO acceso_Nativo (email, pass, idAcceso) VALUES ("${email}", "${pass}", ${response.insertId})`;
+        response = await doQuery(sql);
+
+        res.send({
+          OK: 1,
+          message: 'Usuario creado',
+          usuario: response.insertId,
         });
       }
+    } catch (error) {
       res.status(500).send({
         OK: 0,
-        error: 500,
-        message: error.message,
+        message: `ERROR en base de datos: ${error}`,
       });
     }
   }
 };
 
 exports.login = async (req, res) => {
-  const user = req.body.user;
-  const password = md5(req.body.password);
+  const email = req.body.email;
+  const pass = md5(req.body.pass);
+  //TODO: aquí hay que hacer un SELECT que nos llegue hasta la tabla usuario
+  //para poder sacar el campo id, que es el que guardamos en el JWT de autenticación
+  //y el campo secret que necesitamos para hacer el JWT
+  let sql = `SELECT * FROM acceso_Nativo WHERE email = "${email}" AND pass = "${pass}"`;
+  const response = await doQuery(sql);
+  console.log(response);
 
-  if (isValidUserPass(user, password, res)) {
-    const response = await mysqlConnection.query(
-      'SELECT * FROM usuarios WHERE id = ? AND password = ?',
-      [req.body.id, password],
-    );
-
-    if (response) {
-      const payload = { user };
-      const options = { expiresIn: '10m' };
-      console.log(response);
-      //const token = jwt.sign(payload, response.secret, options);
-      res.send({
-        OK: 1,
-        message: 'Authorization granted',
-        token,
-      });
-    } else {
-      res.status(401).send({
-        OK: 0,
-        error: 401,
-        message: 'not a valid user/password pair',
-      });
-    }
+  if (response.length !== 0) {
+    //TODO aquí en el campo idUser deberíamos coger el valor del id de la tabla usuario
+    //y cambiarlo por el response.id de la linea de abajo
+    const payload = { id: idUser };
+    const options = { expiresIn: '10m' };
+    //TODO aquí donde pone response.secret deberíamos poner donde se haya guardado en response el campo secreto de la tabla usuario
+    //y cambiarlo por el response.id de la linea de abajo
+    const token = jwt.sign(payload, response.secret, options);
+    res.send({
+      OK: 1,
+      message: 'Acceso permitido.',
+      token,
+    });
+  } else {
+    res.status(401).send({
+      OK: 0,
+      error: 401,
+      message: 'Usuario/contraseña inválidos.',
+    });
   }
 };
 
@@ -143,21 +155,25 @@ exports.logout = async (req, res) => {
 
   const token = authorization.split(' ')[1];
 
-  const user = jwt.decode(token).user;
+  const idUser = jwt.decode(token).idUser;
 
-  //TODO: Meter SQL
-  //const response = await User.findOne({ user });
-  const response = null;
+  //ESTA SQL DEBE MIRAR SI EXISTE EL USUARIO CON ID idUser
+  let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
+  let response = await doQuery(sql);
+  console.log('SELECT:', response);
 
-  if (response) {
-    const secret = response.secret;
+  if (response.length !== 0) {
+    const secret = response.secreto;
 
     try {
       jwt.verify(token, secret);
       try {
-        const newSecret = nanoid();
-        //TODO Meter SQL
-        //await User.updateOne({ user }, { secret: newSecret });
+        const newSecret = nanoid(10);
+        // ESTA SQL DEBE INSERTAR LA NUEVA SECRETA DENTRO DE LA TABLA usuarios
+        // DONDE id = idUser
+        sql = `INSERT usuario(secreto) VALUES ("${newSecret}") WHERE id = ${idUser}`;
+        response = await doQuery(sql);
+        console.log('INSERT:', response);
         res.send({
           OK: 1,
           message: 'User Disconnected',
@@ -193,32 +209,32 @@ exports.authUser = async (req, res, next) => {
         message: 'Invalid token',
       });
     } else {
-      const user = payload.user;
+      const idUser = payload.id;
 
-      //TODO: Cambiar a SQL
-      //const response = await User.findOne({ user });
-      let response = null;
+      //TODO: pendiente de SQL
+      // Se necesita una query que encuentre el usuario con idUser
+      // en la tabla usuariuos
+      const sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
+      const response = await doQuery(sql);
 
       if (response) {
-        const secret = response.secret;
-        req.name = response.name;
-        req.picture = response.picture;
+        const secreto = response.secreto;
 
         try {
-          jwt.verify(token, secret);
+          jwt.verify(token, secreto);
           next();
         } catch (error) {
           res.status(401).send({
             OK: 0,
             error: 401,
-            message: error.message,
+            message: `Token inválido: ${error.message}`,
           });
         }
       } else {
         res.status(401).send({
           OK: 0,
           error: 401,
-          message: 'User unknown / invalid Token',
+          message: 'Usuario desconocido / token incorrecto',
         });
       }
     }
@@ -226,7 +242,7 @@ exports.authUser = async (req, res, next) => {
     res.status(401).send({
       OK: 0,
       error: 401,
-      message: 'Token required',
+      message: 'Token requerido',
     });
   }
 };
@@ -271,18 +287,25 @@ exports.googleOAuth = async (req, res) => {
     const picture = ticket.payload.picture;
     console.log(user, verifiedUser);
     if (user && verifiedUser) {
-      //tenemos el usuario hay que buscarlo en nuestra base de datos
+      //TODO: Falta SQL
+      //tenemos el email de google hay que buscarlo en nuestra base de datos
+      //tenemos que encontrar el id de la tabla usuario para un gmail de la tabla u_mail
+      //también necesitamos el campo secreto de la tabla usuario
       try {
-        //const result = await User.findOneAndUpdate({ user }, { name, picture });
-        const result = { secret: 'hola' };
+        const sql = `SELECT * FROM usuario WHERE id = "${idUser}"`; //MODIFICAR
+        const result = await doQuery(sql);
         console.log('RESULT', result);
         if (result) {
-          console.log('USUARIO REGISTRADO');
-          const payload = { user, userType: result.userType };
-          const options = { expiresIn: '10m' };
-          const token = jwt.sign(payload, result.secret, options);
+          //aquí meter el valor de secreto e id
+          const secreto = result.secreto;
+          const idUsuario = result.id;
+          console.log('USUARIO OAUTH LOGEADO');
+          const payload = { id: idUser };
+          const options = { expiresIn: '1d' };
+          const token = jwt.sign(payload, secreto, options);
           console.log('NEWTOKEN', token);
-          res.redirect('http://google.es');
+          //TODO: definir donde hacemos al final la redirección a front
+          res.redirect('http://localhost:8080/test/?token=' + token);
           /* res.send({
             OK: 1,
             status: 200,
