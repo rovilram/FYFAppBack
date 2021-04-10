@@ -3,6 +3,7 @@ const md5 = require('md5');
 const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
 const dbConnection = require('../database/db');
+const { mailer } = require('../utilities/mailer');
 
 const doQuery = (query) => {
   return new Promise((resolve, reject) => {
@@ -375,6 +376,34 @@ exports.googleLink = (req, res) => {
   }
 };
 
-exports.NewPass = (req, res) => {};
+exports.newPass = async (req, res) => {
+  const { email } = req.body;
+
+  const sql = `SELECT * FROM acceso_Nativo WHERE email = "${email}"`;
+  const response = await doQuery(sql);
+
+  if (response.length !== 0) {
+    const token = jwt.sign({ email }, response[0].pass);
+
+    const link = `http://localhost:8080/newpass?token=${token}`;
+    try {
+      mailer(email, link);
+      res.send({
+        OK: 1,
+        message: `Correo electrónico mandado a ${email}`,
+      });
+    } catch (error) {
+      res.status(500).send({
+        OK: 0,
+        message: `Error al mandar correo a ${email}: ${error}`,
+      });
+    }
+  } else {
+    res.status(406).send({
+      OK: 0,
+      message: 'Ese correo electrónico no existe',
+    });
+  }
+};
 
 exports.changePass = (req, res) => {};
