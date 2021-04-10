@@ -119,7 +119,6 @@ exports.signUp = async (req, res) => {
 exports.login = async (req, res) => {
   const email = req.body.email;
   const pass = md5(req.body.pass);
-
   //SELECT que nos lleva hasta la tabla usuario
   //para obtener el campo id (que es el que guardamos en el JWT de autenticación)
   //y el campo secret (que necesitamos para hacer el JWT)
@@ -196,6 +195,7 @@ exports.logout = async (req, res) => {
 
 exports.authUser = async (req, res, next) => {
   const authorization = req.headers.authorization;
+
   if (authorization) {
     const token = authorization.split(' ')[1];
 
@@ -208,16 +208,14 @@ exports.authUser = async (req, res, next) => {
         message: 'Invalid token',
       });
     } else {
-      const idUser = payload.id;
+      const user = JSON.stringify(payload.idUser);
 
-      //TODO: pendiente de SQL
-      // Se necesita una query que encuentre el usuario con idUser
-      // en la tabla usuariuos
-      const sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
+      let sql = `SELECT * FROM usuario WHERE id = ${user}`;
+
       const response = await doQuery(sql);
 
       if (response) {
-        const secreto = response.secreto;
+        const secret = response[0].secreto;
 
         try {
           jwt.verify(token, secreto);

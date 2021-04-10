@@ -22,6 +22,10 @@ Los endpoint marcados con (TOKEN AUTH) requieren que sea enviado un token JWT po
 
 **/google-oauth** _GET_ envía el código de un solo uso de google OAuth para verificar identidad.
 
+**/newpass** _POST_ recoge un email y envía un correo electrónico con un JWT firmado por la pass guardada en BD.
+
+**/changepass** _POST_ (PASS RECOVERY TOKEN AUTH) recoje una nueva contraseña y la asigna al correo del token válido. cambia también la clave secreta.
+
 ## USERS
 
 **/user** _GET_ (TOKEN AUTH) Devuelve los datos de perfil del usuario.
