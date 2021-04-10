@@ -4,8 +4,6 @@ const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
 const dbConnection = require('../database/db');
 
-// require('dotenv').config();
-
 const doQuery = (query) => {
   return new Promise((resolve, reject) => {
     dbConnection.query(query, (error, results) => {
@@ -121,23 +119,23 @@ exports.signUp = async (req, res) => {
 exports.login = async (req, res) => {
   const email = req.body.email;
   const pass = md5(req.body.pass);
-  //TODO: aquí hay que hacer un SELECT que nos llegue hasta la tabla usuario
-  //para poder sacar el campo id, que es el que guardamos en el JWT de autenticación
-  //y el campo secret que necesitamos para hacer el JWT
-  let sql = `SELECT * FROM acceso_Nativo WHERE email = "${email}" AND pass = "${pass}"`;
+
+  //SELECT que nos lleva hasta la tabla usuario
+  //para obtener el campo id (que es el que guardamos en el JWT de autenticación)
+  //y el campo secret (que necesitamos para hacer el JWT)
+
+  let sql = `SELECT u.id, u.secreto
+              FROM usuario u
+                JOIN accesos a ON u.id = a.idUsuario
+                JOIN acceso_Nativo an ON a.id = an.idAcceso
+              WHERE an.email = "${email}" AND an.pass = "${pass}"`;
+
   const response = await doQuery(sql);
-  console.log(response);
 
   if (response.length !== 0) {
-    //TODO aquí en el campo idUser deberíamos coger el valor del id de la tabla usuario
-    //y cambiarlo por el response.id de la linea de abajo
-    let idUser = response.id;
-    let secreto = response.secreto;
-    const payload = { id: idUser };
+    const payload = { email, idUser: response[0].id };
     const options = { expiresIn: '10m' };
-    //TODO aquí donde pone response.secret deberíamos poner donde se haya guardado en response el campo secreto de la tabla usuario
-    //y cambiarlo por el response.id de la linea de abajo
-    const token = jwt.sign(payload, secreto, options);
+    const token = jwt.sign(payload, response[0].secreto, options);
     res.send({
       OK: 1,
       message: 'Acceso permitido.',
@@ -165,17 +163,16 @@ exports.logout = async (req, res) => {
   console.log('SELECT:', response);
 
   if (response.length !== 0) {
-    const secret = response.secreto;
+    const secret = response[0].secreto;
 
     try {
       jwt.verify(token, secret);
       try {
         const newSecret = nanoid(10);
-        // ESTA SQL DEBE INSERTAR LA NUEVA SECRETA DENTRO DE LA TABLA usuarios
-        // DONDE id = idUser
-        sql = `INSERT usuario(secreto) VALUES ("${newSecret}") WHERE id = ${idUser}`;
+        // ESTA SQL ACTUALIZA EL SECRETO (con un nuevo valor)
+        sql = `UPDATE usuario SET secreto = "${newSecret}" WHERE id = ${idUser}`;
         response = await doQuery(sql);
-        console.log('INSERT:', response);
+        console.log('UPDATE:', response);
         res.send({
           OK: 1,
           message: 'User Disconnected',
