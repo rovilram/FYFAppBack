@@ -196,6 +196,7 @@ exports.logout = async (req, res) => {
 
 exports.authUser = async (req, res, next) => {
   const authorization = req.headers.authorization;
+
   if (authorization) {
     const token = authorization.split(' ')[1];
 
@@ -208,16 +209,14 @@ exports.authUser = async (req, res, next) => {
         message: 'Invalid token',
       });
     } else {
-      const user = payload.user;
+      const user = JSON.stringify(payload.idUser);
 
-      //TODO: Cambiar a SQL
-      //const response = await User.findOne({ user });
-      let response = null;
+      let sql = `SELECT * FROM usuario WHERE id = ${user}`;
+
+      const response = await doQuery(sql);
 
       if (response) {
-        const secret = response.secret;
-        req.name = response.name;
-        req.picture = response.picture;
+        const secret = response[0].secreto;
 
         try {
           jwt.verify(token, secret);
