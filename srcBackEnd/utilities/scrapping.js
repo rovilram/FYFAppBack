@@ -38,8 +38,10 @@ async function eitScrapping(url) {
       if (!courses.error) {
         const newCourses = courses.data.map((curso) => {
           const object = {
+            //no hacemos una propiedad id, vamos a basar los favoritos en
+            //la propiedad url
             //id: `eit-${curso.id}`,
-            id: base64url(curso.extra.url),
+            //id: base64url(curso.extra.url),
             title: curso.title,
             resume: curso.excerpt,
             image: `https://escuela.it//storage/${curso.image_thumbnail}`,
