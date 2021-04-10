@@ -8,6 +8,10 @@ router.post('/login', loginController.login);
 
 router.get('/logout', loginController.logout);
 
+router.post('/newpass', loginController.newPass);
+
+router.post('/changepass', loginController.changePass);
+
 router
   .route('/authuser')
   .get(loginController.authUser)

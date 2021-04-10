@@ -374,3 +374,7 @@ exports.googleLink = (req, res) => {
     console.log(error);
   }
 };
+
+exports.NewPass = (req, res) => {};
+
+exports.changePass = (req, res) => {};
