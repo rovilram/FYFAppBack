@@ -6,7 +6,10 @@ router.post('/signup', loginController.signUp);
 
 router.post('/login', loginController.login);
 
-router.get('/logout', loginController.logout);
+router
+  .route('/logout')
+  .get(loginController.authUser)
+  .get(loginController.logout);
 
 router.post('/newpass', loginController.newPass);
 
@@ -26,6 +29,6 @@ router
 //endpoint para pasar a back el código de solo un uso
 //del OAuth de google
 router.route('/google-oauth').get(loginController.googleOAuth);
-
+//endpoint para generar link de OAuth Google
 router.get('/google-link', loginController.googleLink);
 module.exports = router;

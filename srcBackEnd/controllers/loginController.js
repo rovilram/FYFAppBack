@@ -4,6 +4,7 @@ const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
 const { mailer } = require('../utilities/mailer');
 const { doQuery } = require('../utilities/mysql');
+const { pause } = require('../database/db');
 
 //-------------------------------------------------
 
@@ -124,10 +125,9 @@ exports.login = async (req, res) => {
               WHERE an.email = "${email}" AND an.pass = "${pass}"`;
 
   const response = await doQuery(sql);
-
   if (response.length !== 0) {
-    const payload = { email, idUser: response[0].id };
-    const options = { expiresIn: '10m' };
+    const payload = { idUser: response[0].id };
+    const options = { expiresIn: '1d' };
     const token = jwt.sign(payload, response[0].secreto, options);
     res.send({
       OK: 1,
@@ -144,53 +144,23 @@ exports.login = async (req, res) => {
 };
 
 exports.logout = async (req, res) => {
-  const authorization = req.headers.authorization;
-  if (authorization) {
-    const token = authorization.split(' ')[1];
-
-    const idUser = jwt.decode(token).idUser;
-
-    //ESTA SQL DEBE MIRAR SI EXISTE EL USUARIO CON ID idUser
-    let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
-    let response = await doQuery(sql);
-    console.log('SELECT:', response);
-
-    if (response.length !== 0) {
-      const secret = response[0].secreto;
-
-      try {
-        jwt.verify(token, secret);
-        try {
-          const newSecret = nanoid(10);
-          // ESTA SQL ACTUALIZA EL SECRETO (con un nuevo valor)
-          sql = `UPDATE usuario SET secreto = "${newSecret}" WHERE id = ${idUser}`;
-          response = await doQuery(sql);
-          console.log('UPDATE:', response);
-          res.send({
-            OK: 1,
-            message: 'Usuario desconectado',
-          });
-        } catch (error) {
-          res.status(500).send({
-            OK: 0,
-            error: 500,
-            message: `Error en base de datos: error.message`,
-          });
-        }
-      } catch (error) {
-        res.status(401).send({
-          OK: 0,
-          error: 401,
-          message: `Token no válido: ${error.message}`,
-        });
-      }
-    } else {
-      res.status(401).send({
-        OK: 0,
-        error: 401,
-        message: 'Token no válido',
-      });
-    }
+  const { idUser } = res.user;
+  try {
+    const newSecret = nanoid(10);
+    // ESTA SQL ACTUALIZA EL SECRETO (con un nuevo valor)
+    const sql = `UPDATE usuario SET secreto = "${newSecret}" WHERE id = ${idUser}`;
+    const response = await doQuery(sql);
+    console.log('UPDATE:', response);
+    res.send({
+      OK: 1,
+      message: 'Usuario desconectado',
+    });
+  } catch (error) {
+    res.status(500).send({
+      OK: 0,
+      error: 500,
+      message: `Error en base de datos: error.message`,
+    });
   }
 };
 
@@ -209,9 +179,10 @@ exports.authUser = async (req, res, next) => {
         message: 'Invalid token',
       });
     } else {
-      const user = JSON.stringify(payload.idUser);
-
-      let sql = `SELECT * FROM usuario WHERE id = ${user}`;
+      console.log('PAYLOAD', payload);
+      const { idUser } = payload;
+      console.log('IDUSER', idUser);
+      let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
 
       const response = await doQuery(sql);
 
@@ -220,6 +191,11 @@ exports.authUser = async (req, res, next) => {
 
         try {
           jwt.verify(token, secreto);
+          res.user = {
+            idUser,
+            secreto: secreto,
+          };
+          console.log(`Usuario ${idUser} autenticado`);
           next();
         } catch (error) {
           res.status(401).send({
@@ -322,7 +298,7 @@ exports.googleOAuth = async (req, res) => {
         if (result.length !== 0) {
           //aquí meter el valor de secreto e id
           secreto = result[0].secreto;
-          idUser = result[0].idUser;
+          idUser = result[0].id;
           console.log('USUARIO OAUTH LOGEADO');
         } else {
           //el usuario no está en la base de datos, hay que crearlo
@@ -346,7 +322,8 @@ exports.googleOAuth = async (req, res) => {
         }
 
         //ya tenemos userID y secreto podemos hacer JWT y redirigir:
-        const payload = { id: idUser };
+        const payload = { idUser };
+        console.log('PAYLOAD', payload);
         const options = { expiresIn: '1d' };
         const token = jwt.sign(payload, secreto, options);
         console.log('NEWTOKEN', token);

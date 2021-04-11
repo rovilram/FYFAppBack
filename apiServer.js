@@ -6,7 +6,7 @@ require('dotenv').config();
 const courseRouter = require('./srcBackEnd/routes/courseRouter');
 const loginRouter = require('./srcBackEnd/routes/loginRouter');
 const userRouter = require('./srcBackEnd/routes/userRouter');
-const { authUser } = require('./srcBackEnd/controllers/userController');
+const { authUser } = require('./srcBackEnd/controllers/loginController');
 
 const server = express();
 
@@ -27,7 +27,6 @@ server.get('/', (req, res) => {
 });
 
 // COURSES ENDPOINTS
-//server.use('/courses', authUser);
 server.use('/courses', courseRouter);
 
 // AUTH ENDPOINTS
@@ -35,7 +34,7 @@ server.use('/courses', courseRouter);
 server.use('/', loginRouter);
 
 // USER ENDPOINTS
-//server.use('/user', authUser);
+server.use('/user', authUser);
 server.use('/user', userRouter);
 
 server.listen(HTTP.port, HTTP.host, () => {

@@ -4,9 +4,11 @@ Los endpoint marcados con (TOKEN AUTH) requieren que sea enviado un token JWT po
 
 ## COURSES
 
-**OK** **courses?search=""** _GET_ (TOKEN AUTH) Devuelve los cursos con una determinada búsqueda.
+**OK** **courses?search=""** _GET_ Devuelve los cursos con una determinada búsqueda.
 
 **courses/fav** _GET_ (TOKEN AUTH) Devuelve los cursos favoritos del usuario.
+
+**FALTAN ENDPOINTS DE FAVORITOS**
 
 ## AUTH
 
@@ -20,7 +22,7 @@ Los endpoint marcados con (TOKEN AUTH) requieren que sea enviado un token JWT po
 
 **OK** **/google-link** _GET_ pasamos por query params `?action=login` o `?action=signup` en función de si queremos un tipo de link u otro, back envía un link para el botón de google correspondiente
 
-**/google-oauth** _GET_ envía el código de un solo uso de google OAuth para verificar identidad.
+**OK** **/google-oauth** _GET_ envía el código de un solo uso de google OAuth para verificar identidad.
 
 **OK** **/newpass** _POST_ recoge un email y envía un correo electrónico con un JWT firmado por la pass guardada en BD.
 
