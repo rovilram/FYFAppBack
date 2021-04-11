@@ -421,7 +421,7 @@ exports.changePass = async (req, res) => {
             sql = `UPDATE usuario u
                JOIN accesos ac ON u.id = ac.idUsuario
                JOIN acceso_Nativo an ON ac.id = an.idAcceso
-               SET u.secreto = "${newSecret}", an.pass = "${pass}"
+               SET u.secreto = "${newSecret}", an.pass = "${md5(pass)}"
                WHERE an.email = "${email}"`;
             response = await doQuery(sql);
             console.log('UPDATE:', response);
