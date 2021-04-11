@@ -209,7 +209,7 @@ exports.authUser = async (req, res, next) => {
       const response = await doQuery(sql);
 
       if (response) {
-        const secret = response[0].secreto;
+        const { secreto } = response[0];
 
         try {
           jwt.verify(token, secreto);
