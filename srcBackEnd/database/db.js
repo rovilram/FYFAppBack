@@ -9,9 +9,6 @@ const dbConnection = mysql.createConnection({
 
   database : 'fyfappdb'
 
-
-
-
 });
  
 dbConnection.connect(function(err) {
