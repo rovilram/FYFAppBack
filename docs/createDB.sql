@@ -34,7 +34,7 @@ CREATE TABLE profile(
 id int primary key auto_increment,
 nombre varchar(15),
 apellidos varchar(50),
-foto varchar(100),
+foto varchar(200),
 idUsuario int not null,
 foreign key(idUsuario) references usuario(id)
 );

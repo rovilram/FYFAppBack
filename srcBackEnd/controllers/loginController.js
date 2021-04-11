@@ -245,24 +245,46 @@ exports.authUser = async (req, res, next) => {
   }
 };
 
-exports.googleOAuth = async (req, res) => {
-  const code = req.query.code;
-
-  const GOOGLE_SECRET = process.env.GOOGLE_AUTH_SECRET;
-  const GOOGLE_CLIENT_ID = process.env.GOOGLE_AUTH_CLIENT_ID;
-
-  console.log(GOOGLE_SECRET);
-
+const getOAuth2Client = (clientId, clientSecret, redirectUri) => {
   const oauth2Client = new google.auth.OAuth2({
-    clientId: process.env.GOOGLE_AUTH_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_AUTH_SECRET,
-    redirectUri: process.env.GOOGLE_AUTH_REDIRECT_URI,
+    clientId,
+    clientSecret,
+    redirectUri,
   });
 
+  return oauth2Client;
+};
+
+const newGoogleUser = async (user) => {
+  // secreto nombre apellidos foto tipoAcceso gmail
+  const { secreto, nombre, apellidos, foto, gmail } = user;
+  let sql = `INSERT INTO usuario (secreto) VALUES ("${secreto}")`;
+  let respUsuario = await doQuery(sql);
+
+  sql = `INSERT INTO profile (nombre, apellidos, foto, idUsuario)
+         VALUES ("${nombre}", "${apellidos}", "${foto}", ${respUsuario.insertId})`;
+  let response = await doQuery(sql);
+
+  sql = `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${respUsuario.insertId}, 1)`;
+  response = await doQuery(sql);
+
+  sql = `INSERT INTO acceso_Gmail (gmail, idAcceso) VALUES ("${gmail}", ${response.insertId})`;
+  response = await doQuery(sql);
+};
+
+exports.googleOAuth = async (req, res) => {
+  let idUser;
+  let secreto;
+  const clientId = process.env.GOOGLE_AUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_AUTH_SECRET;
+  const redirectUri = process.env.GOOGLE_AUTH_REDIRECT_URI;
+  const code = req.query.code;
+  const oauth2Client = getOAuth2Client(clientId, clientSecret, redirectUri);
   const { tokens } = await oauth2Client.getToken(code);
 
   console.log(tokens);
 
+  //nos quedamos con el token que vamos a usar
   const token = tokens.id_token;
 
   try {
@@ -270,7 +292,7 @@ exports.googleOAuth = async (req, res) => {
     try {
       ticket = await oauth2Client.verifyIdToken({
         idToken: token,
-        audience: GOOGLE_CLIENT_ID,
+        audience: clientId,
       });
     } catch (error) {
       throw {
@@ -281,16 +303,12 @@ exports.googleOAuth = async (req, res) => {
     console.log(ticket.payload);
     const email = ticket.payload.email;
     const verifiedUser = ticket.payload.email_verified;
-    // name y picture creo que aquí no tiene sentido recogerlos
-    // debería ser para cuando haga el SIGNIN con GOOGLE
-    //const name = ticket.payload.name;
-    //const picture = ticket.payload.picture;
+
     console.log(email, verifiedUser);
+
+    //Si tenemos correo electrónico y el usuario está verificado por google
     if (email && verifiedUser) {
-      //TODO: Falta SQL
-      //tenemos el email de google hay que buscarlo en nuestra base de datos
-      //tenemos que encontrar el id de la tabla usuario para un gmail de la tabla u_mail
-      //también necesitamos el campo secreto de la tabla usuario
+      //vemos si está en nuestra base de datos
       try {
         const sql = `SELECT u.id, u.secreto
               FROM usuario u
@@ -298,25 +316,42 @@ exports.googleOAuth = async (req, res) => {
                 JOIN acceso_Gmail an ON a.id = an.idAcceso
               WHERE an.gmail = "${email}"`;
         const result = await doQuery(sql);
-        console.log('RESULT', result);
+        console.log('GMAIL SELECT', result);
+
+        //vemos si existía ya en la base de datos o no
         if (result.length !== 0) {
           //aquí meter el valor de secreto e id
-          const { secreto, idUser } = result[0];
-
+          secreto = result[0].secreto;
+          idUser = result[0].idUser;
           console.log('USUARIO OAUTH LOGEADO');
-          const payload = { id: idUser };
-          const options = { expiresIn: '1d' };
-          const token = jwt.sign(payload, secreto, options);
-          console.log('NEWTOKEN', token);
-          //TODO: definir donde hacemos al final la redirección a front
-          res.redirect('http://localhost:8080/test/test.html?token=' + token);
         } else {
-          //el usuario no está en la base de datos
-          throw {
-            status: 401,
-            message: 'google account is not a valid user',
+          //el usuario no está en la base de datos, hay que crearlo
+          const user = {
+            secreto: nanoid(10),
+            nombre: ticket.payload.given_name,
+            apellidos: ticket.payload.family_name,
+            foto: ticket.payload.picture,
+            gmail: ticket.payload.email,
           };
+          try {
+            idUser = newGoogleUser(user);
+            secreto = user.secreto;
+            console.log('USUARIO OAUTH REGISTRADO');
+          } catch {
+            throw {
+              status: 500,
+              message: 'Error al crear nuevo usuario Google Auth',
+            };
+          }
         }
+
+        //ya tenemos userID y secreto podemos hacer JWT y redirigir:
+        const payload = { id: idUser };
+        const options = { expiresIn: '1d' };
+        const token = jwt.sign(payload, secreto, options);
+        console.log('NEWTOKEN', token);
+        //TODO: definir donde hacemos al final la redirección a front
+        res.redirect('http://localhost:8080/test/test.html?token=' + token);
       } catch (error) {
         //errores varios
         throw {
@@ -379,7 +414,10 @@ exports.googleLink = (req, res) => {
       link: respuesta,
     });
   } catch (error) {
-    console.log(error);
+    res.status(500).send({
+      OK: 1,
+      message: `Error al crear link google ${error}`,
+    });
   }
 };
 
