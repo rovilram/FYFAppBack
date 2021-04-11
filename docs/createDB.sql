@@ -20,7 +20,7 @@ foreign key(idAcceso) references accesos(id)
 );
 CREATE TABLE acceso_Gmail (
 id INT PRIMARY KEY AUTO_INCREMENT,
-gmail varchar(10) not null,
+gmail varchar(100) not null,
 idAcceso int not null,
 foreign key(idAcceso) references accesos(id)
 );

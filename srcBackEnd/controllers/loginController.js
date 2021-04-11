@@ -145,43 +145,50 @@ exports.login = async (req, res) => {
 
 exports.logout = async (req, res) => {
   const authorization = req.headers.authorization;
+  if (authorization) {
+    const token = authorization.split(' ')[1];
 
-  const token = authorization.split(' ')[1];
+    const idUser = jwt.decode(token).idUser;
 
-  const idUser = jwt.decode(token).idUser;
+    //ESTA SQL DEBE MIRAR SI EXISTE EL USUARIO CON ID idUser
+    let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
+    let response = await doQuery(sql);
+    console.log('SELECT:', response);
 
-  //ESTA SQL DEBE MIRAR SI EXISTE EL USUARIO CON ID idUser
-  let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
-  let response = await doQuery(sql);
-  console.log('SELECT:', response);
+    if (response.length !== 0) {
+      const secret = response[0].secreto;
 
-  if (response.length !== 0) {
-    const secret = response[0].secreto;
-
-    try {
-      jwt.verify(token, secret);
       try {
-        const newSecret = nanoid(10);
-        // ESTA SQL ACTUALIZA EL SECRETO (con un nuevo valor)
-        sql = `UPDATE usuario SET secreto = "${newSecret}" WHERE id = ${idUser}`;
-        response = await doQuery(sql);
-        console.log('UPDATE:', response);
-        res.send({
-          OK: 1,
-          message: 'User Disconnected',
-        });
+        jwt.verify(token, secret);
+        try {
+          const newSecret = nanoid(10);
+          // ESTA SQL ACTUALIZA EL SECRETO (con un nuevo valor)
+          sql = `UPDATE usuario SET secreto = "${newSecret}" WHERE id = ${idUser}`;
+          response = await doQuery(sql);
+          console.log('UPDATE:', response);
+          res.send({
+            OK: 1,
+            message: 'Usuario desconectado',
+          });
+        } catch (error) {
+          res.status(500).send({
+            OK: 0,
+            error: 500,
+            message: `Error en base de datos: error.message`,
+          });
+        }
       } catch (error) {
-        res.status(500).send({
+        res.status(401).send({
           OK: 0,
-          error: 500,
-          message: error.message,
+          error: 401,
+          message: `Token no válido: ${error.message}`,
         });
       }
-    } catch (error) {
+    } else {
       res.status(401).send({
         OK: 0,
         error: 401,
-        message: error.message,
+        message: 'Token no válido',
       });
     }
   }
@@ -272,39 +279,37 @@ exports.googleOAuth = async (req, res) => {
       };
     }
     console.log(ticket.payload);
-    const user = ticket.payload.email;
+    const email = ticket.payload.email;
     const verifiedUser = ticket.payload.email_verified;
     // name y picture creo que aquí no tiene sentido recogerlos
     // debería ser para cuando haga el SIGNIN con GOOGLE
-    const name = ticket.payload.name;
-    const picture = ticket.payload.picture;
-    console.log(user, verifiedUser);
-    if (user && verifiedUser) {
+    //const name = ticket.payload.name;
+    //const picture = ticket.payload.picture;
+    console.log(email, verifiedUser);
+    if (email && verifiedUser) {
       //TODO: Falta SQL
       //tenemos el email de google hay que buscarlo en nuestra base de datos
       //tenemos que encontrar el id de la tabla usuario para un gmail de la tabla u_mail
       //también necesitamos el campo secreto de la tabla usuario
       try {
-        const sql = `SELECT * FROM usuario WHERE gmail = "${user}"`; //MODIFICAR
+        const sql = `SELECT u.id, u.secreto
+              FROM usuario u
+                JOIN accesos a ON u.id = a.idUsuario
+                JOIN acceso_Gmail an ON a.id = an.idAcceso
+              WHERE an.gmail = "${email}"`;
         const result = await doQuery(sql);
         console.log('RESULT', result);
-        if (result) {
+        if (result.length !== 0) {
           //aquí meter el valor de secreto e id
-          const secreto = result.secreto;
-          const idUser = result.id;
+          const { secreto, idUser } = result[0];
+
           console.log('USUARIO OAUTH LOGEADO');
           const payload = { id: idUser };
           const options = { expiresIn: '1d' };
           const token = jwt.sign(payload, secreto, options);
           console.log('NEWTOKEN', token);
           //TODO: definir donde hacemos al final la redirección a front
-          res.redirect('http://localhost:8080/test/?token=' + token);
-          /* res.send({
-            OK: 1,
-            status: 200,
-            message: 'Authorized user',
-            token,
-          }); */
+          res.redirect('http://localhost:8080/test/test.html?token=' + token);
         } else {
           //el usuario no está en la base de datos
           throw {
@@ -313,9 +318,11 @@ exports.googleOAuth = async (req, res) => {
           };
         }
       } catch (error) {
+        //errores varios
         throw {
           status: error.status,
           message: `Error: ${error.message}`,
+          error,
         };
       }
     } else {
@@ -327,11 +334,18 @@ exports.googleOAuth = async (req, res) => {
     }
   } catch (error) {
     console.log('ERROR', error);
-    res.status(error.status).send({
-      OK: 0,
-      status: error.status,
-      message: error.message,
-    });
+    if (error.status) {
+      res.status(error.status).send({
+        OK: 0,
+        status: error.status,
+        message: error.message,
+      });
+    } else {
+      res.status(500).send({
+        OK: 0,
+        message: error.message,
+      });
+    }
   }
 };
 
@@ -417,7 +431,6 @@ exports.changePass = async (req, res) => {
 
         try {
           jwt.verify(token, pass);
-          console.log('OK!!!');
           try {
             const newSecret = nanoid(10);
             sql = `UPDATE usuario u
