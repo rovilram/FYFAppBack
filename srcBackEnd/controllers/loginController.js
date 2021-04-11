@@ -67,6 +67,8 @@ exports.signUp = async (req, res) => {
   const email = req.body.email;
   let pass = req.body.pass;
 
+  console.log(email, pass);
+
   //Validamos los campos user y password
   if (isValidUserPass(email, pass, res)) {
     //generamos una clave secreta para el JWT del usuario

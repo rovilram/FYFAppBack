@@ -38,8 +38,10 @@ async function eitScrapping(url) {
       if (!courses.error) {
         const newCourses = courses.data.map((curso) => {
           const object = {
+            //no hacemos una propiedad id, vamos a basar los favoritos en
+            //la propiedad url
             //id: `eit-${curso.id}`,
-            id: base64url(curso.extra.url),
+            //id: base64url(curso.extra.url),
             title: curso.title,
             resume: curso.excerpt,
             image: `https://escuela.it//storage/${curso.image_thumbnail}`,
@@ -103,6 +105,43 @@ async function scrappingCourses(filter) {
     });
 }
 
-//scrappingCourses('deno').then((data) => console.log(data));
+async function udemyAPI() {
+  /* Nombre	FYFApp
+Identificación del cliente	l6peixchfRVvngLsy2a0gr1pKmp3TqBa9p7ZS1Gj
+Secreto de cliente	UIQ7wJu23Q25kfT7PpP398N3TQx6g06LZMljgjX7pCgFww1Zwjgc1AhMT0Tya50cvqSFCnT1NSInEIycLaE4w0N2nnCsjZLeWOTpJ0NUtbRBVBC7SdSfxKMJjTBFvLSn
+Descripción	Estamos desarrollando una app como desarrolladores fullstack sobre plataformas de aprendizaje en el modo IT y Desarrollo web. Pedimos acceso a la información de vuestra api para ver y mostrar en nuestra app cómo está la situación actual de formación.
+Sitio web	https://fyf-app.000webhostapp.com/
+Estado	Aprobado */
+
+  /* {
+    title: OK,
+    resume: OK "headline",
+    image: OK https://img-b.udemycdn.com/course/480x270/980450_7fc0_3.jpg?secure=lTj3wdXKxHHW_AN7ObWXAw%3D%3D%2C1618152908,
+    level: 2,
+    url: 'https://escuela.it/cursos/back-edge-desarrollo-web-al-limite-nodejs-es6-npm-mongodb',
+    popularity: 4.857142857142857,
+    tags: '  Express NodeJS Javascript Backend backend  Express NodeJS Javascript Backend ',
+    price: OK,
+    currentRating: '5',
+    author: OK "visible_instructors[0]."title"'
+  }, */
+
+  const token =
+    'Basic bDZwZWl4Y2hmUlZ2bmdMc3kyYTBncjFwS21wM1RxQmE5cDdaUzFHajpVSVE3d0p1MjNRMjVrZlQ3UHBQMzk4TjNUUXg2ZzA2TFpNbGpnalg3cENnRnd3MVp3amdjMUFoTVQwVHlhNTBjdnFTRkNuVDFOU0luRUl5Y0xhRTR3ME4ybm5Dc2paTGVXT1RwSjBOVXRiUkJWQkM3U2RTZnhLTUpqVEJGdkxTbg==';
+
+  const result = await axios.get(
+    'https://www.udemy.com/api-2.0/courses/?search=javascript?fields=@all',
+    {
+      headers: {
+        Authorization:
+          'Basic bDZwZWl4Y2hmUlZ2bmdMc3kyYTBncjFwS21wM1RxQmE5cDdaUzFHajpVSVE3d0p1MjNRMjVrZlQ3UHBQMzk4TjNUUXg2ZzA2TFpNbGpnalg3cENnRnd3MVp3amdjMUFoTVQwVHlhNTBjdnFTRkNuVDFOU0luRUl5Y0xhRTR3ME4ybm5Dc2paTGVXT1RwSjBOVXRiUkJWQkM3U2RTZnhLTUpqVEJGdkxTbg==',
+      },
+    },
+  );
+
+  console.log(result.data.results.length);
+}
+
+//udemyAPI();
 
 exports.scrappingCourses = scrappingCourses;
