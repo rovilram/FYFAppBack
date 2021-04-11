@@ -18,7 +18,7 @@ Los endpoint marcados con (TOKEN AUTH) requieren que sea enviado un token JWT po
 
 **OK** **/authuser** _GET_ (TOKEN AUTH) Confirma si el token del usuario es válido. **Por si es necesario para front**
 
-**OK** **/google-link** _GET_ pasamos por query params `?action=login` o `?action=register` en función de si queremos un tipo de link u otro, back envía un link para el botón de google correspondiente
+**OK** **/google-link** _GET_ pasamos por query params `?action=login` o `?action=signup` en función de si queremos un tipo de link u otro, back envía un link para el botón de google correspondiente
 
 **/google-oauth** _GET_ envía el código de un solo uso de google OAuth para verificar identidad.
 
