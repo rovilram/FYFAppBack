@@ -2,17 +2,8 @@ const jwt = require('jsonwebtoken');
 const md5 = require('md5');
 const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
-const dbConnection = require('../database/db');
 const { mailer } = require('../utilities/mailer');
-
-const doQuery = (query) => {
-  return new Promise((resolve, reject) => {
-    dbConnection.query(query, (error, results) => {
-      if (error) return reject(error);
-      return resolve(results);
-    });
-  });
-};
+const { doQuery } = require('../utilities/mysql');
 
 //-------------------------------------------------
 
@@ -406,4 +397,56 @@ exports.newPass = async (req, res) => {
   }
 };
 
-exports.changePass = (req, res) => {};
+exports.changePass = async (req, res) => {
+  const { newPass } = req.headers;
+  const authorization = req.headers.authorization;
+
+  const token = authorization.split(' ')[1];
+  const { email } = jwt.decode(token);
+  const secreto = nanoid(10);
+
+  //ESTA SQL DEBE MIRAR SI EXISTE EL CORREOS email EN LA TABLA acceso_nativo
+  let sql = `SELECT * FROM acceso_Nativo WHERE email = "${email}"`;
+  let response = await doQuery(sql);
+  console.log('SELECT:', response);
+
+  if (response.length !== 0) {
+    const { pass } = response[0];
+
+    try {
+      jwt.verify(token, pass);
+      try {
+        //buscamos el usuario que tiene ese correo electrónico
+        /*         sql = `UPDATE usuario u
+               JOIN accesos ac ON u.id = ac.idUsuario
+               JOIN acceso_Nativo an ON ac.id = an.idAcceso
+               SET u.secreto = "${email}", an.pass = "${email}"
+               WHERE an.email = "${email}"; */
+
+        response = await doQuery(sql);
+
+        const newSecret = nanoid(10);
+        // ESTA SQL ACTUALIZA EL SECRETO (con un nuevo valor)
+        sql = `UPDATE usuario SET secreto = "${newSecret}" WHERE id = ${idUser}`;
+        response = await doQuery(sql);
+        console.log('UPDATE:', response);
+        res.send({
+          OK: 1,
+          message: 'User Disconnected',
+        });
+      } catch (error) {
+        res.status(500).send({
+          OK: 0,
+          error: 500,
+          message: error.message,
+        });
+      }
+    } catch (error) {
+      res.status(401).send({
+        OK: 0,
+        error: 401,
+        message: error.message,
+      });
+    }
+  }
+};
