@@ -4,7 +4,6 @@ const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
 const { mailer } = require('../utilities/mailer');
 const { doQuery } = require('../utilities/mysql');
-const { pause } = require('../database/db');
 
 //-------------------------------------------------
 
@@ -481,7 +480,5 @@ exports.changePass = async (req, res) => {
         message: `Token no válido.`,
       });
     }
-
-    //ESTA SQL DEBE MIRAR SI EXISTE EL CORREOS email EN LA TABLA acceso_nativo
   }
 };
