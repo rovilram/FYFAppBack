@@ -1,18 +1,17 @@
 const scrapping = require('../utilities/scrapping');
-//const dbConnection = require('../utilities/db');
 const { doQuery } = require('../utilities/doQuery');
 const { manipulateResults } = require('../utilities/manipulateResults');
 const { buscaComparaFav } = require('../utilities/buscaComparaFav');
 
 exports.getCourses = (req, res) => {
-  const search = req.query.search;
-  // const idUsuario=res.user.idUser;
-  const idUsuario = 2;
+  const {search} = req.query;
+  const idUsuario=res.user.idUser;
+  console.log("IDUSAUARIO", search, idUsuario, res.user)
   scrapping
     .scrappingCourses(search)
     .then(async (courses) => {
       let sql =
-        'SELECT * FROM favoritos fav	WHERE fav.idUsuario = ' + `${idUsuario}`;
+        `SELECT * FROM favoritos	WHERE idUsuario = ${idUsuario}`;
 
       const results = await doQuery(sql);
       let favoritosUsu = manipulateResults(results);
@@ -22,7 +21,6 @@ exports.getCourses = (req, res) => {
 
         buscaComparaFav(course, idUsuario, favoritosUsu);
       }
-
       res.status(200).send({
         OK: 1,
         message: `cursos de la búsqueda ${search}`,

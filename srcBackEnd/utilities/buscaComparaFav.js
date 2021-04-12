@@ -1,6 +1,3 @@
-const {doQuery}= require('./doQuery')
-const {manipulateResults}=require('./manipulateResults')
-
 async function buscaComparaFav(courses,idUsuario,favoritosUsu){
    
   
@@ -10,7 +7,9 @@ async function buscaComparaFav(courses,idUsuario,favoritosUsu){
     
           if (favoritosUsu[i].url === courses.url){
    
-          courses.favorito =true;
+          courses.favorito = true;
+          //añado este campo para poder hacer luego borrado por id de favorito
+          courses.favoritoID = favoritosUsu[i].id;
       
       
     }
