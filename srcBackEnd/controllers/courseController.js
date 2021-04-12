@@ -78,10 +78,10 @@ exports.deleteCourse = async (req, res) => {
     if (results.affectedRows === 1) {
       res.send({ OK: 1, message: 'curso borrado de favoritos' });
     } else {
-      res.send({ OK: 0, message: `Error al borrar curso ${id}` });
+      res.status(404).send({ OK: 0, message: `Error al borrar curso ${id}` });
     }
   } catch (error) {
-    res.status(400).send(error);
+    res.status(500).send({ OK: 0, message: `Error al borrar curso ${id}` });
   }
 };
 
@@ -116,8 +116,21 @@ exports.addFav = async (req, res) => {
 
     const results = await doQuery(sql);
     console.log(results);
-    res.json(results);
+    if (results.affectedRows === 1) {
+      res.status(200).send({
+        OK: 1,
+        message: 'favorito añadido',
+      });
+    } else {
+      res.status(404).send({
+        OK: 0,
+        message: 'Error al añadir el favorito.',
+      });
+    }
   } catch (error) {
-    res.status(400).send(error);
+    res.status(500).send({
+      OK: 0,
+      message: 'Error al añadir favorito ' + error,
+    });
   }
 };
