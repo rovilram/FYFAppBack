@@ -2,7 +2,7 @@ const jwt = require('jsonwebtoken');
 const md5 = require('md5');
 const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
-const dbConnection = require('../database/db');
+const dbConnection = require('../../src/configs/db');
 
 // require('dotenv').config();
 

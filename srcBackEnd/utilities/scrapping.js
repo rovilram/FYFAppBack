@@ -39,6 +39,7 @@ async function eitScrapping(url) {
         const newCourses = courses.data.map((curso) => {
           const object = {
             //id: `eit-${curso.id}`,
+            favorito: false,
             id: base64url(curso.extra.url),
             title: curso.title,
             resume: curso.excerpt,

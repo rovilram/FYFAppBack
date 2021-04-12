@@ -1,63 +1,55 @@
 const { nanoid } = require('nanoid');
-const dbConnection = require('../database/db');
+const dbConnection = require('../../src/configs/db');
 const jwt = require('jsonwebtoken');
 
-exports.getUser = () => {};
+exports.getUser = () => {
 
-exports.getUser = async (req, res) => {
-  if (req.headers.authorization) {
-    const authorization = req.headers.authorization;
-
-    const token = authorization.split(' ')[1];
-
-    const user = jwt.decode(token).user;
-
-    let sql =
-      'SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario =' +
-      `${user}`;
-
-
-exports.getUser =async () => {
-    //aqui metemos el id del usuario que queremos
-   let usuarioBack=1;
-  
-    let sql =('SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario = '+`${usuarioBack}`)
-    
-    const doQuery = (query) =>{
-        return new Promise((resolve, reject) => {
-            dbConnection.query(query, (error, results) => {
-                if(error) return reject(error);
-                console.log('Consulta correcta');
-                return resolve(results);
-            });
-
-    const doQuery = (query) => {
-      return new Promise((resolve, reject) => {
-        dbConnection.query(query, (error, results) => {
-          if (error) return reject(error);
-          console.log('Consulta correcta');
-          return resolve(results);
-
-        });
-      });
-    };
-
-    const results = await doQuery(sql);
-    const doStuffWithResults = (resultados) => {
-      console.log(resultados[0].nombre);
-
-      // Aquí haces cosas con los resultados
-    };
-
-    // llamamos a nuestros métodos y le pasamos el resultado para realizar tareas
-    doStuffWithResults(results);
-  } else {
-    res.status(401).send({
-      OK: 0,
-      message: 'Token requerido',
-    });
-  }
 };
+
+// exports.getUser = async (req, res) => {
+//   if (req.headers.authorization) {
+//     const authorization = req.headers.authorization;
+
+//     const token = authorization.split(' ')[1];
+
+//     const user = jwt.decode(token).user;
+
+//     let sql =
+//       'SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario =' +
+//       `${user}`;
+
+
+// exports.getUser =async () => {
+//     //aqui metemos el id del usuario que queremos
+//    let usuarioBack=1;
+  
+//     let sql =('SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario = '+`${usuarioBack}`)
+    
+//     const doQuery = (query) =>{
+//         return new Promise((resolve, reject) => {
+//             dbConnection.query(query, (error, results) => {
+//                 if(error) return reject(error);
+//                 console.log('Consulta correcta');
+//                 return resolve(results);
+//             });
+
+    
+//     const results = await doQuery(sql);
+//     const doStuffWithResults = (resultados) => {
+//       console.log(resultados[0].nombre);
+
+//       // Aquí haces cosas con los resultados
+//     };
+
+//     // llamamos a nuestros métodos y le pasamos el resultado para realizar tareas
+//     doStuffWithResults(results);
+//   } else {
+//     res.status(401).send({
+//       OK: 0,
+//       message: 'Token requerido',
+//     });
+//   }
+// };
 
 exports.updateUser = async (req, res) => {
   // **/user** _PATCH_ (TOKEN AUTH) Modifica alguno de los datos de perfil del usuario.
