@@ -2,20 +2,51 @@ const scrapping = require('../utilities/scrapping');
 const { doQuery } = require('../utilities/doQuery');
 const { manipulateResults } = require('../utilities/manipulateResults');
 const { buscaComparaFav } = require('../utilities/buscaComparaFav');
+const jwt = require('jsonwebtoken');
 
-exports.getCourses = (req, res) => {
-  const {search} = req.query;
-  const idUsuario=res.user.idUser;
-  console.log("IDUSAUARIO", search, idUsuario, res.user)
+exports.getCourses = async (req, res) => {
+  const { search } = req.query;
+  let idUsuario;
+
+  const authorization = req.headers.authorization;
+
+  if (authorization) {
+    const token = authorization.split(' ')[1];
+
+    const payload = jwt.decode(token);
+
+    if (!payload) {
+      idUsuario = -1;
+    } else {
+      const { idUser } = payload;
+      let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
+
+      const response = await doQuery(sql);
+
+      if (response) {
+        const { secreto } = response[0];
+
+        try {
+          jwt.verify(token, secreto);
+          idUsuario = idUser;
+        } catch (error) {
+          idUsuario = -1;
+        }
+      } else {
+        idUsuario = -1;
+      }
+    }
+  } else {
+    idUsuario = -1;
+  }
+
   scrapping
     .scrappingCourses(search)
     .then(async (courses) => {
-      let sql =
-        `SELECT * FROM favoritos	WHERE idUsuario = ${idUsuario}`;
+      let sql = `SELECT * FROM favoritos	WHERE idUsuario = ${idUsuario}`;
 
       const results = await doQuery(sql);
       let favoritosUsu = manipulateResults(results);
-      console.log(favoritosUsu);
       for (let i = 0; i < courses.length; i++) {
         let course = courses[i];
 
@@ -44,7 +75,6 @@ exports.getFav = async (req, res) => {
     const results = await doQuery(sql);
     res.json(manipulateResults(results));
     res.json(resultados);
-    console.log(manipulateResults(results));
 
     res.send(manipulateResults(results));
   } catch (error) {
@@ -78,10 +108,10 @@ exports.deleteCourse = async (req, res) => {
     } else {
       res.status(404).send({ OK: 0, message: `Error al borrar curso ${id}` });
     }
-    } catch (error) {
-      res.status(500).send({ OK: 0, message: `Error al borrar curso ${id}` });
-    }
-  };
+  } catch (error) {
+    res.status(500).send({ OK: 0, message: `Error al borrar curso ${id}` });
+  }
+};
 
 exports.addFav = async (req, res) => {
   try {
@@ -98,19 +128,17 @@ exports.addFav = async (req, res) => {
     let tags = req.body.tags;
     let popularity = req.body.popularity;
 
-    console.log("idUsuario: " + idUsuario);
-    let sql = `SELECT * FROM favoritos WHERE idUsuario = ${idUsuario}`;
+    let sql = `SELECT * FROM favoritos WHERE idUsuario = ${idUsuario} AND url = "${url}"`;
     const existsInFavorites = await doQuery(sql);
-    console.log("existsInFavorites: " + existsInFavorites);
-    if (existsInFavorites == false){
+    if (existsInFavorites == false) {
       sql = `INSERT INTO favoritos(favorito,idUsuario,price,currentRating,author,url,tags,popularity,title,resume,image,level)values(${favorito},${idUsuario},"${price}","${currentRating}","${author}","${url}","${tags}","${popularity}","${title}","${resume}","${image}","${level}")`;
 
       const results = await doQuery(sql);
-      console.log(results);
       if (results.affectedRows === 1) {
         res.status(200).send({
           OK: 1,
           message: 'favorito añadido',
+          insertId: results.insertId,
         });
       } else {
         res.status(404).send({
@@ -118,11 +146,11 @@ exports.addFav = async (req, res) => {
           message: 'Error al añadir el favorito.',
         });
       }
-    } else{
-        res.status(404).send({
-          OK: 0,
-          message: 'Error al añadir el favorito.',
-        });
+    } else {
+      res.status(409).send({
+        OK: 0,
+        message: `Error al añadir el favorito, ${url} ya existe.`,
+      });
     }
   } catch (error) {
     res.status(500).send({
