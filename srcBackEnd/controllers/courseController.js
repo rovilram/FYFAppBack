@@ -78,52 +78,51 @@ exports.deleteCourse = async (req, res) => {
     } else {
       res.status(404).send({ OK: 0, message: `Error al borrar curso ${id}` });
     }
-  } catch (error) {
-    res.status(500).send({ OK: 0, message: `Error al borrar curso ${id}` });
-  }
-};
+    } catch (error) {
+      res.status(500).send({ OK: 0, message: `Error al borrar curso ${id}` });
+    }
+  };
 
 exports.addFav = async (req, res) => {
   try {
     let favorito = true;
     let idUsuario = res.user.idUser;
-
-    // let id = req.body.id;
-
     let price = req.body.price;
-
     let currentRating = req.body.currentRating;
-
     let author = req.body.author;
-
     let title = req.body.title;
-
     let resume = req.body.resume;
-
     let image = req.body.image;
-
     let level = req.body.level;
-
     let url = req.body.url;
-
     let tags = req.body.tags;
-
     let popularity = req.body.popularity;
 
-    let sql = `INSERT INTO favoritos(favorito,idUsuario,price,currentRating,author,url,tags,popularity,title,resume,image,level)values(${favorito},${idUsuario},"${price}","${currentRating}","${author}","${url}","${tags}","${popularity}","${title}","${resume}","${image}","${level}")`;
+    console.log("idUsuario: " + idUsuario);
+    let sql = `SELECT * FROM favoritos WHERE idUsuario = ${idUsuario}`;
+    const existsInFavorites = await doQuery(sql);
+    console.log("existsInFavorites: " + existsInFavorites);
+    if (existsInFavorites == false){
+      sql = `INSERT INTO favoritos(favorito,idUsuario,price,currentRating,author,url,tags,popularity,title,resume,image,level)values(${favorito},${idUsuario},"${price}","${currentRating}","${author}","${url}","${tags}","${popularity}","${title}","${resume}","${image}","${level}")`;
 
-    const results = await doQuery(sql);
-    console.log(results);
-    if (results.affectedRows === 1) {
-      res.status(200).send({
-        OK: 1,
-        message: 'favorito añadido',
-      });
-    } else {
-      res.status(404).send({
-        OK: 0,
-        message: 'Error al añadir el favorito.',
-      });
+      const results = await doQuery(sql);
+      console.log(results);
+      if (results.affectedRows === 1) {
+        res.status(200).send({
+          OK: 1,
+          message: 'favorito añadido',
+        });
+      } else {
+        res.status(404).send({
+          OK: 0,
+          message: 'Error al añadir el favorito.',
+        });
+      }
+    } else{
+        res.status(404).send({
+          OK: 0,
+          message: 'Error al añadir el favorito.',
+        });
     }
   } catch (error) {
     res.status(500).send({
