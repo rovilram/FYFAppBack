@@ -4,20 +4,7 @@ const { nanoid } = require('nanoid');
 const { google } = require('googleapis');
 const { mailer } = require('../utilities/mailer');
 const { doQuery } = require('../utilities/mysql');
-const dbConnection = require('../../src/configs/db');
-
-//-------------------------------------------------
-
-const doQuery = (query) => {
-  return new Promise((resolve, reject) => {
-    dbConnection.query(query, (error, results) => {
-      if (error) return reject(error);
-      return resolve(results);
-    });
-  });
-};
-
-//-------------------------------------------------
+const dbConnection = require('../utilities/db');
 
 const isValidUser = (user) => {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(user);
@@ -79,7 +66,7 @@ exports.signUp = async (req, res) => {
   const email = req.body.email;
   let pass = req.body.pass;
 
-  console.log(email, pass);
+  console.log('AQUI!', email, pass);
 
   //Validamos los campos user y password
   if (isValidUserPass(email, pass, res)) {

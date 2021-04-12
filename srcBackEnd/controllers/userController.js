@@ -1,4 +1,3 @@
-const dbConnection = require('../database/db');
 const jwt = require('jsonwebtoken');
 const { doQuery } = require('../utilities/mysql');
 

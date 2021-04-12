@@ -1,4 +1,4 @@
-const dbConnection = require('../database/db');
+const dbConnection = require('./db');
 
 exports.doQuery = (query) => {
   return new Promise((resolve, reject) => {
