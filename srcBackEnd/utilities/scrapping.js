@@ -42,6 +42,8 @@ async function eitScrapping(url) {
             //la propiedad url
             //id: `eit-${curso.id}`,
             //id: base64url(curso.extra.url),
+            favorito: false,
+         
             title: curso.title,
             resume: curso.excerpt,
             image: `https://escuela.it//storage/${curso.image_thumbnail}`,
