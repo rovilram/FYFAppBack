@@ -45,10 +45,10 @@ exports.getFav = async (req, res) => {
 
     const results = await doQuery(sql);
     res.json(manipulateResults(results));
-    res.json(resultados);
-    console.log(manipulateResults(results));
+    // res.json(resultados);
+    // console.log(manipulateResults(results));
 
-    res.send(manipulateResults(results));
+    // res.send(manipulateResults(results));
   } catch (error) {
     if (error) {
       res.status(400).send(error);
