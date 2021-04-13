@@ -37,24 +37,43 @@ exports.getUser = async (req, res) => {
 };
 
 exports.updateUser = async (req, res) => {
-  const nombre = req.body.nombre;
-  const apellidos = req.body.apellidos;
-  const foto = req.body.foto;
+  const { nombre, apellidos, foto } = req.body;
 
-  const user = JSON.stringify(res.user.idUser);
+  const idUser = res.user.idUser;
 
-  let sql = `UPDATE profile SET nombre = "${nombre}", apellidos = "${apellidos}", foto = "${foto}" WHERE idUsuario = ${user}`;
+  console.log(nombre, apellidos, foto, idUser);
 
-  const results = await doQuery(sql);
+  //PRIMERO INTENTO HACER UN INSERT, SI DA ERROR ES QUE EL USUARIO ESTÁ YA CREADO Y ENTONCES HAY QUE HACER UN UPDATE
+  let sql = `INSERT profile(nombre, apellidos, foto, idUsuario) VALUES("${nombre}", "${apellidos}", "${foto}", ${idUser})`;
 
-  const doStuffWithResults = (resultados) => {
-    res.send({
-      OK: 1,
-      message: 'Profile updated',
-    });
-  };
+  try {
+    const results = await doQuery(sql);
+    if (!results.affectedRows) {
+      throw 'errpr'; // si no hay nada en affectedRows es que no se ha dado inserción, probamos update
+    }
+  } catch (error) {
+    console.log('HA FALLADO EL INSERT, INTENTAMOS UPDATE');
+    //HA FALLADO EL INSERT, POR LO QUE HACEMOS AHORA UN UPDATE
+    try {
+      const sql = `UPDATE profile SET nombre = "${nombre}", apellidos = "${apellidos}", foto = "${foto}" 
+             WHERE idUsuario = ${idUser}`;
+      const results = await doQuery(sql);
+      if (!results.affectedRows) {
+        throw 'No se ha actualizado el perfil';
+      }
+      res.send({
+        OK: 1,
+        message: 'Perfil actualizado',
+      });
+      console.log(results);
+    } catch {
+      console.log('HAN FALLADO EL INSERT Y EL UPDATE');
 
-  doStuffWithResults(results);
+      //no se ha podido actualizar perfil de ninguna de las dos maneras (insert o update)
+      res.status(500).send({
+        OK: 0,
+        message: 'No se ha podido actualizar perfil',
+      });
+    }
+  }
 };
-
-exports.deleteUser = () => {};
