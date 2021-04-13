@@ -1,47 +1,78 @@
-const jwt = require('jsonwebtoken');
 const { doQuery } = require('../utilities/mysql');
 
 exports.getUser = async (req, res) => {
   const user = res.user.idUser;
 
-  let sql =
-    'SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario = ' + user;
+  try {
+    let sql =
+      'SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario = ' + user;
 
-  const results = await doQuery(sql);
-  console.log(results);
+    const results = await doQuery(sql);
+    console.log(results);
+    const profile = {
+      nombre: '',
+      apellidos: '',
+      foto: '',
+    };
+    if (results.length !== 0) {
+      profile.nombre = results[0].nombre;
+      profile.apellidos = results[0].apellidos;
+      profile.foto = results[0].apellidos;
+    }
 
-  const doStuffWithResults = (resultados) => {
     res.send({
       OK: 1,
       message: 'User profile retrieved',
-      nombre: resultados[0].nombre,
-      apellidos: resultados[0].apellidos,
-      foto: resultados[0].foto,
+      nombre: profile.nombre,
+      apellidos: profile.apellidos,
+      foto: profile.foto,
     });
-  };
-
-  doStuffWithResults(results);
+  } catch (error) {
+    res.status(500).send({
+      OK: 0,
+      message: `Error profile retrieve: ${error}`,
+    });
+  }
 };
 
 exports.updateUser = async (req, res) => {
-  const nombre = req.body.nombre;
-  const apellidos = req.body.apellidos;
-  const foto = req.body.foto;
+  const { nombre, apellidos, foto } = req.body;
 
-  const user = JSON.stringify(res.user.idUser);
+  const idUser = res.user.idUser;
 
-  let sql = `UPDATE profile SET nombre = "${nombre}", apellidos = "${apellidos}", foto = "${foto}" WHERE idUsuario = ${user}`;
+  console.log(nombre, apellidos, foto, idUser);
 
-  const results = await doQuery(sql);
+  //PRIMERO INTENTO HACER UN INSERT, SI DA ERROR ES QUE EL USUARIO ESTÁ YA CREADO Y ENTONCES HAY QUE HACER UN UPDATE
+  let sql = `INSERT profile(nombre, apellidos, foto, idUsuario) VALUES("${nombre}", "${apellidos}", "${foto}", ${idUser})`;
 
-  const doStuffWithResults = (resultados) => {
-    res.send({
-      OK: 1,
-      message: 'Profile updated',
-    });
-  };
+  try {
+    const results = await doQuery(sql);
+    if (!results.affectedRows) {
+      throw 'errpr'; // si no hay nada en affectedRows es que no se ha dado inserción, probamos update
+    }
+  } catch (error) {
+    console.log('HA FALLADO EL INSERT, INTENTAMOS UPDATE');
+    //HA FALLADO EL INSERT, POR LO QUE HACEMOS AHORA UN UPDATE
+    try {
+      const sql = `UPDATE profile SET nombre = "${nombre}", apellidos = "${apellidos}", foto = "${foto}" 
+             WHERE idUsuario = ${idUser}`;
+      const results = await doQuery(sql);
+      if (!results.affectedRows) {
+        throw 'No se ha actualizado el perfil';
+      }
+      res.send({
+        OK: 1,
+        message: 'Perfil actualizado',
+      });
+      console.log(results);
+    } catch {
+      console.log('HAN FALLADO EL INSERT Y EL UPDATE');
 
-  doStuffWithResults(results);
+      //no se ha podido actualizar perfil de ninguna de las dos maneras (insert o update)
+      res.status(500).send({
+        OK: 0,
+        message: 'No se ha podido actualizar perfil',
+      });
+    }
+  }
 };
-
-exports.deleteUser = () => {};

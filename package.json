@@ -2,11 +2,10 @@
   "name": "fyf_app",
   "version": "1.0.0",
   "description": "Find your Future APP",
-  "main": "index.js",
+  "main": "apiServer.js",
   "scripts": {
-    "start": "node src/index.js",
-    "dev": "nodemon src/index.js",
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node apiServer.js",
+    "dev": "nodemon apiServer.js"
   },
   "repository": {
     "type": "git",
