@@ -117,7 +117,7 @@ async function scrappingCourses(filter) {
       return allCoursesScrap;
     })
     .catch((err) => {
-      console.log('ERROR:');
+      console.log('ERROR:', err);
       throw err;
     });
 }
@@ -155,8 +155,6 @@ Estado	Aprobado */
       },
     },
   );
-
-  console.log(result.data.results.length);
 }
 
 //udemyAPI();

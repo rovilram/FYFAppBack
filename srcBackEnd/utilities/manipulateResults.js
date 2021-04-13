@@ -1,5 +1,4 @@
 const manipulateResults = (resultados) => {
-  console.log(resultados);
     let coursesP=[];
      favoritos = resultados.map(function (resultado, index, array) {
       
@@ -9,7 +8,7 @@ const manipulateResults = (resultados) => {
 
      
     });
-    console.log(coursesP)
+   
     return coursesP
     }
 

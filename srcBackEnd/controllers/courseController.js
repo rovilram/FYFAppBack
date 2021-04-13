@@ -52,6 +52,7 @@ exports.getCourses = async (req, res) => {
 
         buscaComparaFav(course, idUsuario, favoritosUsu);
       }
+
       res.status(200).send({
         OK: 1,
         message: `cursos de la búsqueda ${search}`,
@@ -140,14 +141,15 @@ exports.addFav = async (req, res) => {
     let level = req.body.level;
     let url = req.body.url;
     let tags = req.body.tags;
-    let popularity = req.body.popularity;
+    //let popularity = req.body.popularity;
 
     let sql = `SELECT * FROM favoritos WHERE idUsuario = ${idUsuario} AND url = "${url}"`;
     const existsInFavorites = await doQuery(sql);
     if (existsInFavorites == false) {
-      sql = `INSERT INTO favoritos(favorito,idUsuario,price,currentRating,author,url,tags,popularity,title,resume,image,level)values(${favorito},${idUsuario},"${price}","${currentRating}","${author}","${url}","${tags}","${popularity}","${title}","${resume}","${image}","${level}")`;
+      sql = `INSERT INTO favoritos(favorito,idUsuario,price,currentRating,author,url,tags,title,resume,image,level)values(${favorito},${idUsuario},"${price}","${currentRating}","${author}","${url}","${tags}","${title}","${resume}","${image}","${level}")`;
 
       const results = await doQuery(sql);
+
       if (results.affectedRows === 1) {
         res.status(200).send({
           OK: 1,

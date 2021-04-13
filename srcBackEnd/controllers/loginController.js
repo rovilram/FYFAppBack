@@ -66,8 +66,6 @@ exports.signUp = async (req, res) => {
   const email = req.body.email;
   let pass = req.body.pass;
 
-  console.log('AQUI!', email, pass);
-
   //Validamos los campos user y password
   if (isValidUserPass(email, pass, res)) {
     //generamos una clave secreta para el JWT del usuario
@@ -148,7 +146,6 @@ exports.logout = async (req, res) => {
     // ESTA SQL ACTUALIZA EL SECRETO (con un nuevo valor)
     const sql = `UPDATE usuario SET secreto = "${newSecret}" WHERE id = ${idUser}`;
     const response = await doQuery(sql);
-    console.log('UPDATE:', response);
     res.send({
       OK: 1,
       message: 'Usuario desconectado',
@@ -177,9 +174,7 @@ exports.authUser = async (req, res, next) => {
         message: 'Invalid token',
       });
     } else {
-      console.log('PAYLOAD', payload);
       const { idUser } = payload;
-      console.log('IDUSER', idUser);
       let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
 
       const response = await doQuery(sql);
@@ -193,7 +188,6 @@ exports.authUser = async (req, res, next) => {
             idUser,
             secreto: secreto,
           };
-          console.log(`Usuario ${idUser} autenticado`);
           next();
         } catch (error) {
           res.status(401).send({
@@ -256,7 +250,6 @@ exports.googleOAuth = async (req, res) => {
   const oauth2Client = getOAuth2Client(clientId, clientSecret, redirectUri);
   const { tokens } = await oauth2Client.getToken(code);
 
-  console.log(tokens);
 
   //nos quedamos con el token que vamos a usar
   const token = tokens.id_token;
@@ -274,11 +267,9 @@ exports.googleOAuth = async (req, res) => {
         message: `Invalid google token: ${error}`,
       };
     }
-    console.log(ticket.payload);
     const email = ticket.payload.email;
     const verifiedUser = ticket.payload.email_verified;
 
-    console.log(email, verifiedUser);
 
     //Si tenemos correo electrónico y el usuario está verificado por google
     if (email && verifiedUser) {
@@ -290,14 +281,12 @@ exports.googleOAuth = async (req, res) => {
                 JOIN acceso_Gmail an ON a.id = an.idAcceso
               WHERE an.gmail = "${email}"`;
         const result = await doQuery(sql);
-        console.log('GMAIL SELECT', result);
 
         //vemos si existía ya en la base de datos o no
         if (result.length !== 0) {
           //aquí meter el valor de secreto e id
           secreto = result[0].secreto;
           idUser = result[0].id;
-          console.log('USUARIO OAUTH LOGEADO');
         } else {
           //el usuario no está en la base de datos, hay que crearlo
           const user = {
@@ -310,7 +299,6 @@ exports.googleOAuth = async (req, res) => {
           try {
             idUser = newGoogleUser(user);
             secreto = user.secreto;
-            console.log('USUARIO OAUTH REGISTRADO');
           } catch {
             throw {
               status: 500,
@@ -321,10 +309,8 @@ exports.googleOAuth = async (req, res) => {
 
         //ya tenemos userID y secreto podemos hacer JWT y redirigir:
         const payload = { idUser };
-        console.log('PAYLOAD', payload);
         const options = { expiresIn: '1d' };
         const token = jwt.sign(payload, secreto, options);
-        console.log('NEWTOKEN', token);
         //TODO: definir donde hacemos al final la redirección a front
         res.redirect('http://localhost:8080/test/test.html?token=' + token);
       } catch (error) {
@@ -343,7 +329,6 @@ exports.googleOAuth = async (req, res) => {
       };
     }
   } catch (error) {
-    console.log('ERROR', error);
     if (error.status) {
       res.status(error.status).send({
         OK: 0,
@@ -430,14 +415,12 @@ exports.changePass = async (req, res) => {
   const { pass } = req.body;
   if (isValidUserPass('test@test.es', pass, res)) {
     const { authorization } = req.headers;
-    console.log(pass, authorization);
     const token = authorization.split(' ')[1];
     try {
       const { email } = jwt.decode(token);
 
       let sql = `SELECT * FROM acceso_Nativo WHERE email = "${email}"`;
       let response = await doQuery(sql);
-      console.log('SELECT:', response);
 
       if (response.length !== 0) {
         const { pass } = response[0];
@@ -452,7 +435,6 @@ exports.changePass = async (req, res) => {
                SET u.secreto = "${newSecret}", an.pass = "${md5(pass)}"
                WHERE an.email = "${email}"`;
             response = await doQuery(sql);
-            console.log('UPDATE:', response);
             res.send({
               OK: 1,
               message: 'Password cambiada',

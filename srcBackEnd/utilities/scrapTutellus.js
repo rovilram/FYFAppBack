@@ -29,16 +29,16 @@ async function scrapTutellus (url) {
         currentRating = parseFloat(currentRating, 10);
         let urlDetalle=$(e).children('div.course-info').children('h3.course-title').children('a').attr('href')
         let url=`https://www.tutellus.com${urlDetalle}`;
-           const    dataCourse={
-                    favorito: false,
-                    img :img,    
-                    title :title,
-                    author :author,
-                    price : price,
-                    currentRating :  currentRating , 
-                    url : url, 
-                    resume:""
-                }
+           const dataCourse = {
+             favorito: false,
+             image: img.replace('//', 'http://'),
+             title: title,
+             author: author,
+             price: price,
+             currentRating: currentRating,
+             url: url,
+             resume: '',
+           };
              
                 arrayDataCourse.push(dataCourse)
                 })
@@ -92,7 +92,6 @@ async function main(search) {
     const url=`https://www.tutellus.com/buscador/${search}/cursos`
     const arrayTutellus = await scrapTutellus(url);
     const arrayTutellusTotal = await addFields(arrayTutellus);   
-    //console.log(arrayTutellusTotal);
     return arrayTutellusTotal;
 }
 

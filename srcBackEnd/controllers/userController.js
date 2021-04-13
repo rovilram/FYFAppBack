@@ -8,7 +8,6 @@ exports.getUser = async (req, res) => {
       'SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario = ' + user;
 
     const results = await doQuery(sql);
-    console.log(results);
     const profile = {
       nombre: '',
       apellidos: '',
@@ -40,7 +39,6 @@ exports.updateUser = async (req, res) => {
 
   const idUser = res.user.idUser;
 
-  console.log(nombre, apellidos, foto, idUser);
 
   //PRIMERO INTENTO HACER UN INSERT, SI DA ERROR ES QUE EL USUARIO ESTÁ YA CREADO Y ENTONCES HAY QUE HACER UN UPDATE
   let sql = `INSERT profile(nombre, apellidos, foto, idUsuario) VALUES("${nombre}", "${apellidos}", "${foto}", ${idUser})`;
@@ -51,7 +49,6 @@ exports.updateUser = async (req, res) => {
       throw 'errpr'; // si no hay nada en affectedRows es que no se ha dado inserción, probamos update
     }
   } catch (error) {
-    console.log('HA FALLADO EL INSERT, INTENTAMOS UPDATE');
     //HA FALLADO EL INSERT, POR LO QUE HACEMOS AHORA UN UPDATE
     try {
       const sql = `UPDATE profile SET nombre = "${nombre}", apellidos = "${apellidos}", foto = "${foto}" 
@@ -64,9 +61,7 @@ exports.updateUser = async (req, res) => {
         OK: 1,
         message: 'Perfil actualizado',
       });
-      console.log(results);
     } catch {
-      console.log('HAN FALLADO EL INSERT Y EL UPDATE');
 
       //no se ha podido actualizar perfil de ninguna de las dos maneras (insert o update)
       res.status(500).send({
