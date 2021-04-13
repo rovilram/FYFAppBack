@@ -74,10 +74,14 @@ exports.getFav = async (req, res) => {
 
     const results = await doQuery(sql);
     if (results.length !== 0) {
+      const favoritos = results.map((el) => {
+        el.favoritoID = el.id;
+        return el;
+      });
       res.send({
         OK: 1,
         message: `favoritos de usuario ${idUser} recibidos`,
-        fav: manipulateResults(results),
+        fav: manipulateResults(favoritos),
       });
     } else {
       res.status(404).send({
