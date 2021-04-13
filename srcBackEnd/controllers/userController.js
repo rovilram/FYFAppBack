@@ -1,4 +1,3 @@
-const jwt = require('jsonwebtoken');
 const { doQuery } = require('../utilities/mysql');
 
 exports.getUser = async (req, res) => {
