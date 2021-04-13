@@ -4,23 +4,36 @@ const { doQuery } = require('../utilities/mysql');
 exports.getUser = async (req, res) => {
   const user = res.user.idUser;
 
-  let sql =
-    'SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario = ' + user;
+  try {
+    let sql =
+      'SELECT nombre, apellidos, foto FROM profile  WHERE idUsuario = ' + user;
 
-  const results = await doQuery(sql);
-  console.log(results);
+    const results = await doQuery(sql);
+    console.log(results);
+    const profile = {
+      nombre: '',
+      apellidos: '',
+      foto: '',
+    };
+    if (results.length !== 0) {
+      profile.nombre = results[0].nombre;
+      profile.apellidos = results[0].apellidos;
+      profile.foto = results[0].apellidos;
+    }
 
-  const doStuffWithResults = (resultados) => {
     res.send({
       OK: 1,
       message: 'User profile retrieved',
-      nombre: resultados[0].nombre,
-      apellidos: resultados[0].apellidos,
-      foto: resultados[0].foto,
+      nombre: profile.nombre,
+      apellidos: profile.apellidos,
+      foto: profile.foto,
     });
-  };
-
-  doStuffWithResults(results);
+  } catch (error) {
+    res.status(500).send({
+      OK: 0,
+      message: `Error profile retrieve: ${error}`,
+    });
+  }
 };
 
 exports.updateUser = async (req, res) => {
