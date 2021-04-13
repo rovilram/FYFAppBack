@@ -12,6 +12,11 @@ const isValidUser = (user) => {
 
 const isValidPassword = (password) => {
   //Minimo 8 caracteres, 1 minúscula, 1 mayúscula, 1 número y 1 caracter especial(@#$%&)
+  if (!password)
+    return {
+      OK: 0,
+      message: 'password cannot be empty',
+    };
   const validLong = password.length > 7 ? true : false;
   const validMin = /[a-z]+/.test(password);
   const validMay = /[A-Z]+/.test(password);
@@ -250,7 +255,6 @@ exports.googleOAuth = async (req, res) => {
   const oauth2Client = getOAuth2Client(clientId, clientSecret, redirectUri);
   const { tokens } = await oauth2Client.getToken(code);
 
-
   //nos quedamos con el token que vamos a usar
   const token = tokens.id_token;
 
@@ -269,7 +273,6 @@ exports.googleOAuth = async (req, res) => {
     }
     const email = ticket.payload.email;
     const verifiedUser = ticket.payload.email_verified;
-
 
     //Si tenemos correo electrónico y el usuario está verificado por google
     if (email && verifiedUser) {
@@ -412,8 +415,8 @@ exports.newPass = async (req, res) => {
 };
 
 exports.changePass = async (req, res) => {
-  const { pass } = req.body;
-  if (isValidUserPass('test@test.es', pass, res)) {
+  const newpass = req.body.pass;
+  if (isValidUserPass('test@test.es', newpass, res)) {
     const { authorization } = req.headers;
     const token = authorization.split(' ')[1];
     try {
@@ -432,7 +435,7 @@ exports.changePass = async (req, res) => {
             sql = `UPDATE usuario u
                JOIN accesos ac ON u.id = ac.idUsuario
                JOIN acceso_Nativo an ON ac.id = an.idAcceso
-               SET u.secreto = "${newSecret}", an.pass = "${md5(pass)}"
+               SET u.secreto = "${newSecret}", an.pass = "${md5(newpass)}"
                WHERE an.email = "${email}"`;
             response = await doQuery(sql);
             res.send({
