@@ -19,9 +19,14 @@ async function scrapTutellus (url) {
         let title=$(e).children('span').attr('title')
         let img=$(e).children('span').children('img').attr('src')
         let price= $(e).children('div.course-stats').children('div.price').children('strong.final-price').text()
+        if (price === "Gratis"){
+          price = parseInt(0)
+        } else {
+          price = parseInt(price.replace("€","").trim())
+        }
         let author =$(e).children('div.course-info').children('img').attr('alt')
         let   currentRating =$(e).children('div.course-stats').children('div.m-stars').children('span.ion-android-star').text()
-      
+        currentRating = parseFloat(currentRating, 10);
         let urlDetalle=$(e).children('div.course-info').children('h3.course-title').children('a').attr('href')
         let url=`https://www.tutellus.com${urlDetalle}`;
            const    dataCourse={
@@ -85,12 +90,11 @@ const addFields = await arrayCursos.map(
 async function main(search) {
 
     const url=`https://www.tutellus.com/buscador/${search}/cursos`
-
-   const arrayTutellus = await scrapTutellus(url);
-   const arrayTutellusTotal = await addFields(arrayTutellus);
-   
-  //  console.log(arrayTutellusTotal);
+    const arrayTutellus = await scrapTutellus(url);
+    const arrayTutellusTotal = await addFields(arrayTutellus);   
+    //console.log(arrayTutellusTotal);
+    return arrayTutellusTotal;
 }
 
-main(search);
+main("java");
 exports.main = main;
