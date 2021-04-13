@@ -5,6 +5,6 @@ const userController = require('../controllers/userController');
 router
   .route('/')
   .get(userController.getUser)
-  .patch(userController.updateUser)
+  .post(userController.updateUser)
 
 module.exports = router;

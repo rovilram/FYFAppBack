@@ -17,7 +17,7 @@ exports.getUser = async (req, res) => {
     if (results.length !== 0) {
       profile.nombre = results[0].nombre;
       profile.apellidos = results[0].apellidos;
-      profile.foto = results[0].apellidos;
+      profile.foto = results[0].foto;
     }
 
     res.send({

@@ -35,6 +35,6 @@ id int primary key auto_increment,
 nombre varchar(15),
 apellidos varchar(50),
 foto varchar(200),
-idUsuario int not null,
+idUsuario INT NOT NULL UNIQUE,
 foreign key(idUsuario) references usuario(id)
 );

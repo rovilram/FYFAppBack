@@ -18,6 +18,9 @@ const HTTP = {
 //permitimos CORS sin limitaciones
 server.use(cors());
 
+
+
+
 server.use(express.urlencoded({ extended: false }));
 server.use(express.json());
 
