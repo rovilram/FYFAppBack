@@ -2,6 +2,7 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const base64url = require('base64url');
 const EIT_URL = 'https://escuela.it/api/course/get-all';
+const scrapTutellus = require('./scrapTutellus')
 
 async function scrapDetalle(href) {
   //recogemos la info con axios
@@ -47,18 +48,18 @@ async function eitScrapping(url) {
             title: curso.title,
             resume: curso.excerpt,
             image: `https://escuela.it//storage/${curso.image_thumbnail}`,
-            level: curso.extra.level_number,
+            // level: curso.extra.level_number,
             url: curso.extra.url,
-            popularity: curso.extra.popularity,
-            tags:
-              curso.related_tags.reduce((acc, tag) => {
-                acc = acc + ' ' + tag.name;
-                return acc;
-              }, ' ') +
-              ' ' +
-              curso.extra.plainCategories +
-              ' ' +
-              curso.extra.plain_tags,
+            // popularity: curso.extra.popularity,
+            // tags:
+            //   curso.related_tags.reduce((acc, tag) => {
+            //     acc = acc + ' ' + tag.name;
+            //     return acc;
+            //   }, ' ') +
+            //   ' ' +
+            //   curso.extra.plainCategories +
+            //   ' ' +
+            //   curso.extra.plain_tags,
           };
           return object;
         });
@@ -99,7 +100,8 @@ async function scrappingCourses(filter) {
     .then((courses) => eitAddFields(courses))
     .then((data) => {
       //TODO: añadir aquí la función del otro proveedor de cursos, homogeneizar y unir los dos arrays
-      return data;
+      const arr3 = data.concat(arr2);
+      return arr3;
     })
     .catch((err) => {
       console.log('ERROR:');
@@ -145,5 +147,6 @@ Estado	Aprobado */
 }
 
 //udemyAPI();
-
+let busqueda=scrapTutellus.main('java')
+console.log(busqueda)
 exports.scrappingCourses = scrappingCourses;
