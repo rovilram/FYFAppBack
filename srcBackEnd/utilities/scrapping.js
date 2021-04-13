@@ -2,6 +2,7 @@ const cheerio = require('cheerio');
 const axios = require('axios');
 const base64url = require('base64url');
 const EIT_URL = 'https://escuela.it/api/course/get-all';
+const scrapTutellus = require('./scrapTutellus')
 
 async function scrapDetalle(href) {
   //recogemos la info con axios
@@ -14,8 +15,16 @@ async function scrapDetalle(href) {
       transform: (body) => cheerio.load(response.data);
       let $ = cheerio.load(response.data);
       let price = $('.Course-price-promo').text();
+
+      if (price === "Gratis"){
+        price = parseInt(0)
+      } else {
+        price = parseInt(price.replace("€","").trim())
+      }
+
       let rating = $('.Course-interaction-ratings');
       let currentRating = rating.children('eit-rating').attr('currentrating');
+      currentRating = parseFloat(currentRating, 10);
       let author = $('.Person-name').text();
       dataCourse = {
         price: price,
@@ -47,18 +56,18 @@ async function eitScrapping(url) {
             title: curso.title,
             resume: curso.excerpt,
             image: `https://escuela.it//storage/${curso.image_thumbnail}`,
-            level: curso.extra.level_number,
+            // level: curso.extra.level_number,
             url: curso.extra.url,
-            popularity: curso.extra.popularity,
-            tags:
-              curso.related_tags.reduce((acc, tag) => {
-                acc = acc + ' ' + tag.name;
-                return acc;
-              }, ' ') +
-              ' ' +
-              curso.extra.plainCategories +
-              ' ' +
-              curso.extra.plain_tags,
+            // popularity: curso.extra.popularity,
+            // tags:
+            //   curso.related_tags.reduce((acc, tag) => {
+            //     acc = acc + ' ' + tag.name;
+            //     return acc;
+            //   }, ' ') +
+            //   ' ' +
+            //   curso.extra.plainCategories +
+            //   ' ' +
+            //   curso.extra.plain_tags,
           };
           return object;
         });
@@ -97,9 +106,15 @@ async function scrappingCourses(filter) {
   return await eitScrapping(EIT_URL)
     .then((courses) => eitCoursesFilter(courses, filter))
     .then((courses) => eitAddFields(courses))
-    .then((data) => {
-      //TODO: añadir aquí la función del otro proveedor de cursos, homogeneizar y unir los dos arrays
-      return data;
+    .then(async(data) => {
+      const arrayTutellus = await scrapTutellus.main(filter)
+      const allCoursesScrap = data.concat(arrayTutellus);
+
+      allCoursesScrap
+        .sort((a,b)=> (a.price > b.price ? 1 : -1))
+        .sort((a,b)=> (a.currentRating < b.currentRating))
+
+      return allCoursesScrap;
     })
     .catch((err) => {
       console.log('ERROR:');
