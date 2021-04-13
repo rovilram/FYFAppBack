@@ -67,20 +67,30 @@ exports.getCourses = async (req, res) => {
 };
 
 exports.getFav = async (req, res) => {
-  let idUsuarioBack = req.params.idUsuario;
+  let { idUser } = res.user;
 
   try {
-    let sql = 'SELECT * FROM favoritos 	WHERE idUsuario = ' + `${idUsuarioBack}`;
+    let sql = 'SELECT * FROM favoritos 	WHERE idUsuario = ' + `${idUser}`;
 
     const results = await doQuery(sql);
-    res.json(manipulateResults(results));
-    res.json(resultados);
-
-    res.send(manipulateResults(results));
-  } catch (error) {
-    if (error) {
-      res.status(400).send(error);
+    if (results.length !== 0) {
+      res.send({
+        OK: 1,
+        message: `favoritos de usuario ${idUser} recibidos`,
+        fav: manipulateResults(results),
+      });
+    } else {
+      res.status(404).send({
+        OK: 0,
+        message: `El usuario ${idUser} no tiene favoritos`,
+      });
     }
+    // res.json(resultados);
+  } catch (error) {
+    res.status(500).send({
+      OK: 0,
+      message: `Error al recoger favoritos: ${error}`,
+    });
   }
 };
 

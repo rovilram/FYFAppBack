@@ -2,7 +2,6 @@ const express = require('express');
 const router = express.Router();
 const courseController = require('../controllers/courseController');
 const loginController = require('../controllers/loginController');
-const jwt = require('jsonwebtoken');
 
 //Questions endpoint (devuelve "num" preguntas o todas si no se pasa ese parámetro por body.params)
 router
@@ -14,7 +13,10 @@ router
   .route('/fav')
   .post(loginController.authUser)
   .post(courseController.addFav);
-router.route('/fav/:idUsuario').get(courseController.getFav);
+router
+  .route('/fav')
+  .get(loginController.authUser)
+  .get(courseController.getFav);
 router
   .route('/delete/:id')
   .delete(loginController.authUser)
