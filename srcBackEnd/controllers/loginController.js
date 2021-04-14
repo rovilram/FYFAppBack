@@ -164,13 +164,14 @@ exports.logout = async (req, res) => {
 };
 
 exports.authUser = async (req, res, next) => {
+  console.log('ESTOY EN EL AUTH!!!!!');
   const authorization = req.headers.authorization;
 
   if (authorization) {
     const token = authorization.split(' ')[1];
 
     const payload = jwt.decode(token);
-
+    console.log('AUTHUSER PAYLOAD', payload);
     if (!payload) {
       res.status(401).send({
         OK: 0,
@@ -181,20 +182,28 @@ exports.authUser = async (req, res, next) => {
       const { idUser } = payload;
       let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
       console.log(sql);
-      console.log(payload)
+      console.log(payload);
       const response = await doQuery(sql);
+      console.log('AUTHUSER SELECT', response);
 
       if (response) {
         const { secreto } = response[0];
 
         try {
+          console.log('AUTHUSER ANTES DEL VERIFY', token, secreto);
+
           jwt.verify(token, secreto);
           res.user = {
             idUser,
             secreto: secreto,
           };
+          console.log('HAGO EL NEXT', token, secreto);
+
           next();
         } catch (error) {
+          console.log('TOKEN INCORRECTO 1');
+
+          console.log('PETOOOOO!!!!');
           res.status(401).send({
             OK: 0,
             error: 401,
@@ -202,6 +211,7 @@ exports.authUser = async (req, res, next) => {
           });
         }
       } else {
+        console.log('TOKEN INCORRECTO 2');
         res.status(401).send({
           OK: 0,
           error: 401,
@@ -210,6 +220,7 @@ exports.authUser = async (req, res, next) => {
       }
     }
   } else {
+    console.log('TOKEN REQUERIDO');
     res.status(401).send({
       OK: 0,
       error: 401,
@@ -247,7 +258,6 @@ const newGoogleUser = async (user) => {
   return respUsuario.insertId;
 };
 
-
 const newGoogleUserVincular = async (user) => {
   // secreto nombre apellidos foto tipoAcceso gmail
   const { idUser, gmail } = user;
@@ -258,9 +268,6 @@ const newGoogleUserVincular = async (user) => {
   sql = `INSERT INTO acceso_Gmail (gmail, idAcceso) VALUES ("${gmail}", ${response.insertId})`;
   response = await doQuery(sql);
 };
-
-
-
 
 exports.googleOAuth = async (req, res) => {
   let idUser;
@@ -288,9 +295,9 @@ exports.googleOAuth = async (req, res) => {
         message: `Invalid google token: ${error}`,
       };
     }
-    const { email} = ticket.payload;
+    const { email } = ticket.payload;
     const verifiedUser = ticket.payload.email_verified;
-    console.log(ticket)
+    console.log(ticket);
     //Si tenemos correo electrónico y el usuario está verificado por google
     if (email && verifiedUser) {
       //vemos si está en nuestra base de datos
@@ -301,7 +308,7 @@ exports.googleOAuth = async (req, res) => {
                 JOIN acceso_Gmail an ON a.id = an.idAcceso
               WHERE an.gmail = "${email}"`;
         const result = await doQuery(sql);
-        console.log("RESULT", result)
+        console.log('RESULT', result);
         //vemos si existía ya en la base de datos o no
         if (result.length !== 0) {
           secreto = result[0].secreto;
@@ -318,7 +325,7 @@ exports.googleOAuth = async (req, res) => {
           try {
             idUser = newGoogleUser(user);
             secreto = user.secreto;
-            console.log("IDUSER", idUser)
+            console.log('IDUSER', idUser);
           } catch {
             throw {
               status: 500,
@@ -327,113 +334,6 @@ exports.googleOAuth = async (req, res) => {
           }
         }
 
-        //ya tenemos userID y secreto podemos hacer JWT y redirigir:
-        const payload = { idUser };
-        const options = { expiresIn: '1d' };
-        const token = jwt.sign(payload, secreto, options);
-        //TODO: definir donde hacemos al final la redirección a front
-        res.redirect(
-          'http://localhost:8080/google-oauth?token=' + token,
-        );
-      } catch (error) {
-        //errores varios
-        throw {
-          status: error.status,
-          message: `Error: ${error.message}`,
-          error,
-        };
-      }
-    } else {
-      //no ha venido nada en el correo electrónico o el correo no está verificado
-      throw {
-        status: 401,
-        message: 'Invalid google account',
-      };
-    }
-  } catch (error) {
-    if (error.status) {
-      res.status(error.status).send({
-        OK: 0,
-        status: error.status,
-        message: error.message,
-      });
-    } else {
-      res.status(500).send({
-        OK: 0,
-        message: error.message,
-      });
-    }
-  }
-};
-
-
-exports.googleVincular = async (req, res) => {
-  let {idUser} = res.user;
-  //let secreto;
-  const clientId = process.env.GOOGLE_AUTH_CLIENT_ID_VINCULAR;
-  const clientSecret = process.env.GOOGLE_AUTH_SECRET_VINCULAR;
-  const redirectUri = process.env.GOOGLE_AUTH_REDIRECT_URI_VINCULAR;
-  const code = req.query.code;
-  const oauth2Client = getOAuth2Client(clientId, clientSecret, redirectUri);
-  const { tokens } = await oauth2Client.getToken(code);
-
-  //nos quedamos con el token que vamos a usar
-  const token = tokens.id_token;
-
-  try {
-    let ticket;
-    try {
-      ticket = await oauth2Client.verifyIdToken({
-        idToken: token,
-        audience: clientId,
-      });
-    } catch (error) {
-      throw {
-        status: 401,
-        message: `Invalid google token: ${error}`,
-      };
-    }
-    const { email } = ticket.payload;
-    let secreto;
-    const verifiedUser = ticket.payload.email_verified;
-    console.log(ticket);
-    //Si tenemos correo electrónico y el usuario está verificado por google
-    if (email && verifiedUser) {
-      //vemos si está en nuestra base de datos
-      try {
-        const sql = `SELECT * FROM acceso_Gmail WHERE
-                    gmail = ${email}`;
-        // const sql = `SELECT u.id, u.secreto
-        //       FROM usuario u
-        //         JOIN accesos a ON u.id = a.idUsuario
-        //         JOIN acceso_Gmail an ON a.id = an.idAcceso
-        //       WHERE an.gmail = "${email}"`;
-        const result = await doQuery(sql);
-        console.log('RESULT SELECT', result);
-        //vemos si existía ya en la base de datos o no
-        if (result.length !== 0) {
-          //el usuario gmail ya existe. No se puede vincular
-          res.status(409).send({
-            OK: 0,
-            message: `El correo ${email} ya existe`
-          })
-        } else {
-          //el correo no está en gmail creamos una entrada en la tabla
-          // accesos y otra en la tabla acceso_Gmail
-          const user = {
-            idUser,
-            gmail: ticket.payload.email,
-          };
-          try {
-            newGoogleUserVincular(user);
-            secreto = user.secreto;
-          } catch {
-            throw {
-              status: 500,
-              message: 'Error al vincular el usuario Gmail',
-            };
-          }
-        }
         //ya tenemos userID y secreto podemos hacer JWT y redirigir:
         const payload = { idUser };
         const options = { expiresIn: '1d' };
@@ -471,24 +371,173 @@ exports.googleVincular = async (req, res) => {
   }
 };
 
+exports.googleVincular = async (req, res) => {
+  console.log('-----------------------EMPEZAMOS!!!!!!');
+  let idUsuario;
 
+  const authorization = req.headers.authorization;
 
+  if (authorization) {
+    const token = authorization.split(' ')[1];
 
+    const payload = jwt.decode(token);
 
+    if (!payload) {
+      res.status(500).send({
+        OK: 0,
+        message: 'ERROR DE TOKEN',
+      });
+    } else {
+      const { idUser } = payload;
+      let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
 
+      const response = await doQuery(sql);
 
+      if (response) {
+        const { secreto } = response[0];
 
+        try {
+          jwt.verify(token, secreto);
+          console.log('USUARIO VERIFICADO!!!!');
 
+          let { idUser } = res.user;
+          console.log('USER', idUser);
+          //let secreto;
+          const clientId = process.env.GOOGLE_AUTH_CLIENT_ID_VINCULAR;
+          const clientSecret = process.env.GOOGLE_AUTH_SECRET_VINCULAR;
+          const redirectUri = process.env.GOOGLE_AUTH_REDIRECT_URI_VINCULAR;
+          console.log('REQ', req.query);
+          const code = req.query.code;
+          console.log('CODE', code);
 
+          const oauth2Client = getOAuth2Client(
+            clientId,
+            clientSecret,
+            redirectUri,
+          );
+          const { tokens } = await oauth2Client.getToken(code);
+          console.log('tokens', tokens);
 
+          //nos quedamos con el token que vamos a usar
+          const token = tokens.id_token;
 
+          try {
+            let ticket;
+            try {
+              ticket = await oauth2Client.verifyIdToken({
+                idToken: token,
+                audience: clientId,
+              });
+            } catch (error) {
+              throw {
+                status: 401,
+                message: `Invalid google token: ${error}`,
+              };
+            }
+            const { email } = ticket.payload;
+            let secreto;
+            const verifiedUser = ticket.payload.email_verified;
+            console.log('ticket y secreto', ticket, secreto);
+            //Si tenemos correo electrónico y el usuario está verificado por google
+            if (email && verifiedUser) {
+              //vemos si está en nuestra base de datos
+              try {
+                const sql = `SELECT * FROM acceso_Gmail WHERE
+                    gmail = ${email}`;
+                // const sql = `SELECT u.id, u.secreto
+                //       FROM usuario u
+                //         JOIN accesos a ON u.id = a.idUsuario
+                //         JOIN acceso_Gmail an ON a.id = an.idAcceso
+                //       WHERE an.gmail = "${email}"`;
+                const result = await doQuery(sql);
+                console.log('RESULT SELECT', result);
+                //vemos si existía ya en la base de datos o no
+                if (result.length !== 0) {
+                  //el usuario gmail ya existe. No se puede vincular
+                  console.log(`El correo ${email} ya existe`);
+                  res.status(409).send({
+                    OK: 0,
+                    message: `El correo ${email} ya existe`,
+                  });
+                } else {
+                  //el correo no está en gmail creamos una entrada en la tabla
+                  // accesos y otra en la tabla acceso_Gmail
+                  const user = {
+                    idUser,
+                    gmail: ticket.payload.email,
+                  };
+                  console.log('USER', user);
+                  try {
+                    newGoogleUserVincular(user);
+                    secreto = user.secreto;
+                  } catch {
+                    console.log('Error al vincular el usuario Gmail');
+                    throw {
+                      status: 500,
+                      message: 'Error al vincular el usuario Gmail',
+                    };
+                  }
+                }
+                //ya tenemos userID y secreto podemos hacer JWT y redirigir:
+                const payload = { idUser };
+                const options = { expiresIn: '1d' };
+                const token = jwt.sign(payload, secreto, options);
+                console.log('TOKEN JWT', token);
+                //TODO: definir donde hacemos al final la redirección a front
+                res.redirect(
+                  'http://localhost:8080/google-oauth?token=' + token,
+                );
+              } catch (error) {
+                //errores varios
+                throw {
+                  status: error.status,
+                  message: `Error: ${error.message}`,
+                  error,
+                };
+              }
+            } else {
+              //no ha venido nada en el correo electrónico o el correo no está verificado
+              throw {
+                status: 401,
+                message: 'Invalid google account',
+              };
+            }
+          } catch (error) {
+            if (error.status) {
+              res.status(error.status).send({
+                OK: 0,
+                status: error.status,
+                message: error.message,
+              });
+            } else {
+              res.status(500).send({
+                OK: 0,
+                message: error.message,
+              });
+            }
+          }
+        } catch (error) {
+          res.status(500).send({
+            OK: 0,
+            message: 'ERROR DE TOKEN',
+          });
+        }
+      } else {
+        res.status(500).send({
+          OK: 0,
+          message: 'ERROR DE TOKEN',
+        });
+      }
+    }
+  } else {
+    res.status(500).send({
+      OK: 0,
+      message: 'ERROR DE TOKEN',
+    });
+  }
 
-
-
-
-
-
-
+  /* 
+};
 
 function getGoogleAuthURL() {
   /*
@@ -509,7 +558,7 @@ function getGoogleAuthURL() {
     prompt: 'consent',
     scope: scopes, // If you only need one scope you can pass it as string
   });
-}
+};
 
 function getGoogleAuthURLVinculacion() {
   /*
@@ -548,10 +597,10 @@ exports.googleLink = (req, res) => {
   }
 };
 
-
 exports.googleLinkVincular = (req, res) => {
   try {
     const respuesta = getGoogleAuthURLVinculacion();
+    console.log('LINK:', respuesta);
     res.status(200).send({
       OK: 1,
       message: 'google link creado',

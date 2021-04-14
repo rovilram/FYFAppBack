@@ -33,7 +33,6 @@ server.get('/', (req, res) => {
 server.use('/courses', courseRouter);
 
 // AUTH ENDPOINTS
-//server.use('/', authUser);
 server.use('/', loginRouter);
 
 // USER ENDPOINTS

@@ -38,7 +38,6 @@ module.exports = router;
 // OAuth para vincular cuenta
 router
   .route('/google-vincular')
-  .post(loginController.authUser)
   .post(loginController.googleVincular);
 router.get('/google-link-vincular', loginController.googleLinkVincular);
 
