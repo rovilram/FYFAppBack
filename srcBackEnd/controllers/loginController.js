@@ -271,9 +271,9 @@ exports.googleOAuth = async (req, res) => {
         message: `Invalid google token: ${error}`,
       };
     }
-    const email = ticket.payload.email;
+    const { email} = ticket.payload;
     const verifiedUser = ticket.payload.email_verified;
-
+    console.log(ticket)
     //Si tenemos correo electrónico y el usuario está verificado por google
     if (email && verifiedUser) {
       //vemos si está en nuestra base de datos
@@ -284,10 +284,9 @@ exports.googleOAuth = async (req, res) => {
                 JOIN acceso_Gmail an ON a.id = an.idAcceso
               WHERE an.gmail = "${email}"`;
         const result = await doQuery(sql);
-
+        console.log("RESULT", result)
         //vemos si existía ya en la base de datos o no
         if (result.length !== 0) {
-          //aquí meter el valor de secreto e id
           secreto = result[0].secreto;
           idUser = result[0].id;
         } else {
@@ -315,7 +314,9 @@ exports.googleOAuth = async (req, res) => {
         const options = { expiresIn: '1d' };
         const token = jwt.sign(payload, secreto, options);
         //TODO: definir donde hacemos al final la redirección a front
-        res.redirect('http://localhost:8080/test/test.html?token=' + token);
+        res.redirect(
+          'http://localhost:8080/google-oauth?token=' + token,
+        );
       } catch (error) {
         //errores varios
         throw {
