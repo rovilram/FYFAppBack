@@ -7,7 +7,7 @@ const dbConnection = mysql.createConnection({
   user     : process.env.DB_USER,
   password : process.env.DB_PASS,
 
-  database : 'fyfappdb'
+  database : 'fyfAppDB'
 
 });
  
