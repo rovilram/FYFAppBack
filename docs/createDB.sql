@@ -9,8 +9,7 @@ CREATE TABLE accesos (
 id INT PRIMARY KEY AUTO_INCREMENT,
 idUsuario int not null,
 tipoAcceso int not null,
-foreign key(idUsuario) references usuario(id)
-);
+foreign key(idUsuario) references usuario(id));
 CREATE TABLE acceso_Nativo (
 id INT PRIMARY KEY AUTO_INCREMENT,
 email varchar(100) NOT NULL,

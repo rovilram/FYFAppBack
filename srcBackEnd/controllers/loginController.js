@@ -179,12 +179,14 @@ exports.authUser = async (req, res, next) => {
         message: 'Invalid token',
       });
     } else {
+      console.log(payload)
       const { idUser } = payload;
       let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
-
+      console.log(sql);
       const response = await doQuery(sql);
+      console.log(response);
 
-      if (response) {
+      if (response.length!==0) {
         const { secreto } = response[0];
 
         try {
@@ -243,6 +245,8 @@ const newGoogleUser = async (user) => {
 
   sql = `INSERT INTO acceso_Gmail (gmail, idAcceso) VALUES ("${gmail}", ${response.insertId})`;
   response = await doQuery(sql);
+
+  return respUsuario.insertId;
 };
 
 exports.googleOAuth = async (req, res) => {
@@ -299,8 +303,9 @@ exports.googleOAuth = async (req, res) => {
             gmail: ticket.payload.email,
           };
           try {
-            idUser = newGoogleUser(user);
+            idUser = await newGoogleUser(user);
             secreto = user.secreto;
+            console.log("USUARIO",idUser, user )
           } catch {
             throw {
               status: 500,
@@ -308,7 +313,7 @@ exports.googleOAuth = async (req, res) => {
             };
           }
         }
-
+        console.log("USER",idUser, secreto);
         //ya tenemos userID y secreto podemos hacer JWT y redirigir:
         const payload = { idUser };
         const options = { expiresIn: '1d' };
