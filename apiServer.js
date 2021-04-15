@@ -26,7 +26,7 @@ server.use(express.json());
 
 //test endpoint
 server.get('/', (req, res) => {
-  res.send("Hello World! I'm a API server!!!");
+  res.send("Hello World! I'm a API server!!");
 });
 
 // COURSES ENDPOINTS
