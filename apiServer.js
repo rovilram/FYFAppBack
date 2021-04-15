@@ -20,9 +20,6 @@ const PORT = process.env.PORT || 3000;
 //permitimos CORS sin limitaciones
 server.use(cors());
 
-
-
-
 server.use(express.urlencoded({ extended: false }));
 server.use(express.json());
 
@@ -42,6 +39,6 @@ server.use('/', loginRouter);
 server.use('/user', authUser);
 server.use('/user', userRouter);
 
-server.listen(PORT, HTTP.host, () => {
+server.listen(PORT, () => {
   console.log(`API server running at http://${HTTP.host}:${PORT}`);
 });
