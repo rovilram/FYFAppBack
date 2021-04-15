@@ -11,7 +11,7 @@ const { authUser } = require('./srcBackEnd/controllers/loginController');
 const server = express();
 
 const HTTP = {
-  port: process.env.HTTP_API_PORT || 80,
+  port: process.env.HTTP_API_PORT || 5000,
   host: process.env.HTTP_API_HOST || 'localhost',
 };
 
