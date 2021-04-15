@@ -15,6 +15,8 @@ const HTTP = {
   host: process.env.HTTP_API_HOST || 'localhost',
 };
 
+const PORT = process.env.PORT || 8000;
+
 //permitimos CORS sin limitaciones
 server.use(cors());
 
@@ -40,6 +42,6 @@ server.use('/', loginRouter);
 server.use('/user', authUser);
 server.use('/user', userRouter);
 
-server.listen(HTTP.port, HTTP.host, () => {
+server.listen(PORT, HTTP.host, () => {
   console.log(`API server running at http://${HTTP.host}:${HTTP.port}`);
 });
