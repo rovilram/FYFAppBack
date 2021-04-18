@@ -78,7 +78,7 @@ exports.signUp = async (req, res) => {
     pass = md5(pass);
     try {
       let sql = `SELECT email FROM acceso_Nativo WHERE email = "${email}"`;
-      
+
       let response = await doQuery(sql);
       console.log('PRIMERA OK');
       if (response.length !== 0) {
@@ -90,14 +90,16 @@ exports.signUp = async (req, res) => {
       } else {
         sql = `INSERT INTO usuario (secreto) VALUES ("${secret}")`;
         response = await doQuery(sql);
-        
+
         console.log('SEGUNDA OK');
         console.log('PASS', pass);
-        
+
         sql = `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${response.insertId}, 0)`;
         response = await doQuery(sql);
 
-        sql = `INSERT INTO acceso_Nativo (email, pass, idAcceso) VALUES ("${email}", "${pass.trim()}", ${response.insertId})`;
+        sql = `INSERT INTO acceso_Nativo (email, pass, idAcceso) VALUES ("${email}", "${pass.trim()}", ${
+          response.insertId
+        })`;
         response = await doQuery(sql);
 
         console.log('TERCERA OK');
@@ -187,7 +189,6 @@ exports.authUser = async (req, res, next) => {
     } else {
       const { idUser } = payload;
       let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
-      console.log("ESTOY AQUI", idUser)
       const response = await doQuery(sql);
 
       if (response) {
@@ -195,6 +196,8 @@ exports.authUser = async (req, res, next) => {
 
         try {
           jwt.verify(token, secreto);
+          console.log('Usuario Autenticado', idUser);
+
           res.user = {
             idUser,
             secreto: secreto,
@@ -238,17 +241,26 @@ const newGoogleUser = async (user) => {
   // secreto nombre apellidos foto tipoAcceso gmail
   const { secreto, nombre, apellidos, foto, gmail } = user;
   let sql = `INSERT INTO usuario (secreto) VALUES ("${secreto}")`;
+  console.log(sql);
   let respUsuario = await doQuery(sql);
 
   sql = `INSERT INTO profile (nombre, apellidos, foto, idUsuario)
          VALUES ("${nombre}", "${apellidos}", "${foto}", ${respUsuario.insertId})`;
+  console.log(sql);
+
   let response = await doQuery(sql);
 
   sql = `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${respUsuario.insertId}, 1)`;
+  console.log(sql);
+
   response = await doQuery(sql);
 
   sql = `INSERT INTO acceso_Gmail (gmail, idAcceso) VALUES ("${gmail}", ${response.insertId})`;
+  console.log(sql);
+
   response = await doQuery(sql);
+  console.log('USUARIO CREADO', respUsuario.insertId);
+  return respUsuario.insertId;
 };
 
 exports.googleOAuth = async (req, res) => {
@@ -306,7 +318,7 @@ exports.googleOAuth = async (req, res) => {
             gmail: ticket.payload.email,
           };
           try {
-            idUser = newGoogleUser(user);
+            idUser = await newGoogleUser(user);
             secreto = user.secreto;
           } catch {
             throw {
@@ -319,10 +331,13 @@ exports.googleOAuth = async (req, res) => {
         //ya tenemos userID y secreto podemos hacer JWT y redirigir:
         const payload = { idUser };
         const options = { expiresIn: '1d' };
+        console.log('PAYLOAD', payload);
         const token = jwt.sign(payload, secreto, options);
         //TODO: definir donde hacemos al final la redirección a front
         console.log('REDIRIGIR!!!');
-        res.redirect(process.env.FRONT_URL + '?action=google-oauth&token=' + token);
+        res.redirect(
+          process.env.FRONT_URL + '?action=google-oauth&token=' + token,
+        );
       } catch (error) {
         //errores varios
         throw {
@@ -354,15 +369,11 @@ exports.googleOAuth = async (req, res) => {
   }
 };
 
-function getGoogleAuthURL() {
+function getGoogleAuthURL(oAuthData) {
   /*
    * Generate a url that asks permissions to the user's email and profile
    */
-  const oauth2Client = new google.auth.OAuth2({
-    clientId: process.env.GOOGLE_AUTH_CLIENT_ID,
-    clientSecret: process.env.GOOGLE_AUTH_SECRET,
-    redirectUri: process.env.GOOGLE_AUTH_REDIRECT_URI,
-  });
+  const oauth2Client = new google.auth.OAuth2(oAuthData);
   const scopes = [
     'https://www.googleapis.com/auth/userinfo.profile',
     'https://www.googleapis.com/auth/userinfo.email',
@@ -376,19 +387,37 @@ function getGoogleAuthURL() {
 }
 
 exports.googleLink = (req, res) => {
-  const {action} = req.params;
-  console.log("ACTION",action);
-  try {
-    const respuesta = getGoogleAuthURL();
-    res.status(200).send({
-      OK: 1,
-      message: 'google link creado',
-      link: respuesta,
-    });
-  } catch (error) {
-    res.status(500).send({
-      OK: 1,
-      message: `Error al crear link google ${error}`,
+  const { action } = req.params;
+  console.log('ACTION', action);
+
+  if (action === 'auth' || action === 'link') {
+    const oAuthData = {};
+    if (action === 'auth') {
+      oAuthData.clientId = process.env.GOOGLE_AUTH_CLIENT_ID;
+      oAuthData.clientSecret = process.env.GOOGLE_AUTH_SECRET;
+      oAuthData.redirectUri = process.env.GOOGLE_AUTH_REDIRECT_URI;
+    } else {
+      oAuthData.clientId = process.env.GOOGLE_LINK_CLIENT_ID;
+      oAuthData.clientSecret = process.env.GOOGLE_LINK_SECRET;
+      oAuthData.redirectUri = process.env.GOOGLE_LINK_REDIRECT_URI;
+    }
+    try {
+      const respuesta = getGoogleAuthURL(oAuthData);
+      res.status(200).send({
+        OK: 1,
+        message: 'google link creado',
+        link: respuesta,
+      });
+    } catch (error) {
+      res.status(500).send({
+        OK: 1,
+        message: `Error al crear link google ${error}`,
+      });
+    }
+  } else {
+    res.status(404).send({
+      OK: 0,
+      message: `Opción ${action} no permitida`,
     });
   }
 };
