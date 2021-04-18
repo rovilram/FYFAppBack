@@ -315,7 +315,8 @@ exports.googleOAuth = async (req, res) => {
         const options = { expiresIn: '1d' };
         const token = jwt.sign(payload, secreto, options);
         //TODO: definir donde hacemos al final la redirección a front
-        res.redirect('http://localhost:8080/test/test.html?token=' + token);
+        console.log("REDIRIGIR!!!")
+        res.redirect(process.env.FRONT_URL + '/google-oauth?token=' + token);
       } catch (error) {
         //errores varios
         throw {
@@ -393,7 +394,7 @@ exports.newPass = async (req, res) => {
   if (response.length !== 0) {
     const token = jwt.sign({ email }, response[0].pass);
 
-    const link = `http://localhost:8080/newpass?token=${token}`;
+    const link = `${process.env.FRONT_URL}/newpass?token=${token}`;
     try {
       mailer(email, link);
       res.send({
