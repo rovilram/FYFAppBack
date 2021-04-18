@@ -376,6 +376,8 @@ function getGoogleAuthURL() {
 }
 
 exports.googleLink = (req, res) => {
+  const {action} = req.params;
+  console.log("ACTION",action);
   try {
     const respuesta = getGoogleAuthURL();
     res.status(200).send({
