@@ -32,3 +32,5 @@ router.route('/google-oauth').get(loginController.googleOAuth);
 //endpoint para generar link de OAuth Google
 router.get('/google-link', loginController.googleLink);
 module.exports = router;
+
+router.post('/vincular');

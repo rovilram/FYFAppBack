@@ -16,8 +16,7 @@ id INT PRIMARY KEY AUTO_INCREMENT,
 email varchar(100) NOT NULL,
 pass varchar(100) NOT NULL,
 idAcceso int not null,
-foreign key(idAcceso) references accesos(id)
-);
+foreign key(idAcceso) references accesos(id));
 CREATE TABLE acceso_Gmail (
 id INT PRIMARY KEY AUTO_INCREMENT,
 gmail varchar(100) not null,

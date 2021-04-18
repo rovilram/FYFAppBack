@@ -3,12 +3,11 @@ const mysql      = require('mysql');
 const { rootCertificates } = require("tls");
 require('dotenv').config();
 const dbConnection = mysql.createConnection({
-  host     : process.env.DB_HOST,
-  user     : process.env.DB_USER,
-  password : process.env.DB_PASS,
+  host: process.env.DB_HOST,
+  user: process.env.DB_USER,
+  password: process.env.DB_PASS,
 
-  database : 'fyfAppDB'
-
+  database: 'fyfAppDB',
 });
  
 dbConnection.connect(function(err) {

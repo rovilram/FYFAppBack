@@ -78,9 +78,9 @@ exports.signUp = async (req, res) => {
     pass = md5(pass);
     try {
       let sql = `SELECT email FROM acceso_Nativo WHERE email = "${email}"`;
-
+      
       let response = await doQuery(sql);
-
+      console.log('PRIMERA OK');
       if (response.length !== 0) {
         res.status(409).send({
           OK: 0,
@@ -90,12 +90,17 @@ exports.signUp = async (req, res) => {
       } else {
         sql = `INSERT INTO usuario (secreto) VALUES ("${secret}")`;
         response = await doQuery(sql);
-
+        
+        console.log('SEGUNDA OK');
+        console.log('PASS', pass);
+        
         sql = `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${response.insertId}, 0)`;
         response = await doQuery(sql);
 
-        sql = `INSERT INTO acceso_Nativo (email, pass, idAcceso) VALUES ("${email}", "${pass}", ${response.insertId})`;
+        sql = `INSERT INTO acceso_Nativo (email, pass, idAcceso) VALUES ("${email}", "${pass.trim()}", ${response.insertId})`;
         response = await doQuery(sql);
+
+        console.log('TERCERA OK');
 
         res.send({
           OK: 1,
@@ -104,6 +109,7 @@ exports.signUp = async (req, res) => {
         });
       }
     } catch (error) {
+      console.log(error);
       res.status(500).send({
         OK: 0,
         message: `ERROR en base de datos: ${error}`,
@@ -181,7 +187,7 @@ exports.authUser = async (req, res, next) => {
     } else {
       const { idUser } = payload;
       let sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
-
+      console.log("ESTOY AQUI", idUser)
       const response = await doQuery(sql);
 
       if (response) {
@@ -315,8 +321,8 @@ exports.googleOAuth = async (req, res) => {
         const options = { expiresIn: '1d' };
         const token = jwt.sign(payload, secreto, options);
         //TODO: definir donde hacemos al final la redirección a front
-        console.log("REDIRIGIR!!!")
-        res.redirect(process.env.FRONT_URL + '/google-oauth?token=' + token);
+        console.log('REDIRIGIR!!!');
+        res.redirect(process.env.FRONT_URL + '?action=google-oauth&token=' + token);
       } catch (error) {
         //errores varios
         throw {
@@ -394,7 +400,7 @@ exports.newPass = async (req, res) => {
   if (response.length !== 0) {
     const token = jwt.sign({ email }, response[0].pass);
 
-    const link = `${process.env.FRONT_URL}/newpass?token=${token}`;
+    const link = `${process.env.FRONT_URL}?action=newpass&token=${token}`;
     try {
       mailer(email, link);
       res.send({
@@ -463,6 +469,172 @@ exports.changePass = async (req, res) => {
         OK: 0,
         error: 401,
         message: `Token no válido.`,
+      });
+    }
+  }
+};
+
+validateToken = async (authorization, res) => {
+  if (!authorization) {
+    res.status(401).send({
+      OK: 0,
+      message: 'No hay token',
+    });
+    return false;
+  }
+
+  const token = authorization.split(' ')[1];
+
+  if (!token) {
+    res.status(401).send({
+      OK: 0,
+      message: 'Token no válido',
+    });
+    return false;
+  }
+
+  const payload = jwt.decode(token);
+  if (!payload) {
+    res.status(401).send({
+      OK: 0,
+      status: 401,
+      message: 'Token no válido',
+    });
+    return false;
+  }
+
+  const { idUser } = payload;
+
+  const sql = `SELECT * FROM usuario WHERE id = ${idUser}`;
+  const response = await doQuery(sql);
+
+  if (response) {
+    const { secreto } = response[0];
+
+    try {
+      jwt.verify(token, secreto);
+      return {
+        idUser,
+        secreto: secreto,
+      };
+    } catch (error) {
+      res.status(401).send({
+        OK: 0,
+        error: 401,
+        message: `Token inválido: ${error.message}`,
+      });
+      return false;
+    }
+  } else {
+    res.status(401).send({
+      OK: 0,
+      error: 401,
+      message: 'Usuario desconocido / token incorrecto',
+    });
+    return false;
+  }
+};
+
+const getGoogleUser = async (code, res) => {
+  const clientId = process.env.GOOGLE_AUTH_CLIENT_ID;
+  const clientSecret = process.env.GOOGLE_AUTH_SECRET;
+  const redirectUri = process.env.GOOGLE_AUTH_REDIRECT_URI;
+  const oauth2Client = getOAuth2Client(clientId, clientSecret, redirectUri);
+  const { tokens } = await oauth2Client.getToken(code);
+
+  //elegimos el token que necesitamos para recoger el gmail
+  const token = tokens.id_token;
+
+  try {
+    const ticket = await oauth2Client.verifyIdToken({
+      idToken: token,
+      audience: clientId,
+    });
+  } catch (error) {
+    res.status(401).send({
+      status: 401,
+      message: `Invalid google token: ${error}`,
+    });
+    return false;
+  }
+
+  const gmail = ticket.payload.email;
+  const verifiedUser = ticket.payload.email;
+
+  if (gmail && verifiedUser) {
+    const user = {
+      secreto: nanoid(10),
+      nombre: ticket.payload.given_name,
+      apellidos: ticket.payload.family_name,
+      foto: ticket.payload.picture,
+      gmail,
+    };
+    return user;
+  }
+
+  res.status(401).send({
+    status: 401,
+    message: `usuario google no válido`,
+  });
+};
+
+const addGoogleToUser = async (idUser, gmail, res) => {
+  const { secreto, nombre, apellidos, foto } = user;
+
+  try {
+    let sql = `INSERT INTO accesos (idUsuario, tipoAcceso) VALUES (${idUser}, 1)`;
+    let response = await doQuery(sql);
+
+    try {
+      sql = `INSERT INTO acceso_Gmail (gmail, idAcceso) VALUES ("${gmail}", ${response.insertId})`;
+      response = await doQuery(sql);
+
+      // creamos el perfil si no está ya creado
+      try {
+        sql = `INSERT INTO profile (nombre, apellidos, foto, idUsuario)
+       VALUES ("${nombre}", "${apellidos}", "${foto}", ${idUser})`;
+        response = await doQuery(sql);
+      } catch (error) {
+        //si falla al insertar se actualiza el que ya hay para ese usuario con los datos de google
+        sql = `UPDATE profile SET nombre=${nombre}, apellidos=${apellidos}, foto=${foto} WHERE idUsuario = ${idUser}`;
+        response = await doQuery(sql);
+      }
+
+      return true;
+    } catch (error) {
+      res.status(409).send({
+        OK: 0,
+        message: `El correo ${gmail} ya tiene un perfil creado: ${error}`,
+      });
+      return false;
+    }
+  } catch (error) {
+    res.status(500).send({
+      OK: 0,
+      message: `Error de base de datos: ${error}`,
+    });
+    return false;
+  }
+};
+
+exports.vincularGoogle = async (res, req) => {
+  //recogemos code del body y authorization del header
+  const code = req.body.code;
+  const authorization = req.headers.authorization;
+
+  // obtenermos gmail del code
+  const gmail = await getGoogleUser(code, res);
+
+  // obtenemos idUser del token
+  const user = await validateToken(authorization, res);
+  const { idUser } = user;
+
+  if (idUser && gmail) {
+    // añadimos el gmail a accesos_Gmail con el usuario idUser.
+    if (addGoogleToUser(idUser, user)) {
+      res.send({
+        OK: 1,
+        message: `correo ${gmail} vinculado a usuario ${idUser}`,
       });
     }
   }
