@@ -31,7 +31,7 @@ async function scrapTutellus (url) {
         let url=`https://www.tutellus.com${urlDetalle}`;
            const dataCourse = {
              favorito: false,
-             image: img.replace('//', 'http://'),
+             image: img.replace('//', 'https://'),
              title: title,
              author: author,
              price: price,
