@@ -39,12 +39,14 @@ exports.updateUser = async (req, res) => {
 
   const idUser = res.user.idUser;
 
+  console.log(nombre, apellidos, foto, idUser);
 
   //PRIMERO INTENTO HACER UN INSERT, SI DA ERROR ES QUE EL USUARIO ESTÁ YA CREADO Y ENTONCES HAY QUE HACER UN UPDATE
   let sql = `INSERT profile(nombre, apellidos, foto, idUsuario) VALUES("${nombre}", "${apellidos}", "${foto}", ${idUser})`;
 
   try {
     const results = await doQuery(sql);
+    console.log('PRIMERO', results);
     if (!results.affectedRows) {
       throw 'errpr'; // si no hay nada en affectedRows es que no se ha dado inserción, probamos update
     }
@@ -54,6 +56,8 @@ exports.updateUser = async (req, res) => {
       const sql = `UPDATE profile SET nombre = "${nombre}", apellidos = "${apellidos}", foto = "${foto}" 
              WHERE idUsuario = ${idUser}`;
       const results = await doQuery(sql);
+      console.log('SEGUNDO', results);
+
       if (!results.affectedRows) {
         throw 'No se ha actualizado el perfil';
       }
@@ -62,7 +66,6 @@ exports.updateUser = async (req, res) => {
         message: 'Perfil actualizado',
       });
     } catch {
-
       //no se ha podido actualizar perfil de ninguna de las dos maneras (insert o update)
       res.status(500).send({
         OK: 0,
